@@ -1,0 +1,21 @@
+# Lines file
+# source_code,target_code,length_km,maintenance_cost,bidirectional
+# One-way lines (false) go from the main substation to secondary ones.
+source_code,target_code,length_km,maintenance_cost,bidirectional
+SUB-001,SUB-002,4.5,1800,false
+SUB-001,SUB-006,5.0,2000,false
+SUB-001,SUB-004,6.2,2400,false
+SUB-001,SUB-008,5.5,2100,false
+SUB-001,SUB-014,1.8,900,true
+SUB-002,SUB-003,3.1,1100,false
+SUB-004,SUB-005,2.7,1000,false
+SUB-004,SUB-012,7.4,3000,true
+SUB-006,SUB-007,2.2,800,false
+SUB-006,SUB-013,4.0,1700,true
+SUB-008,SUB-009,3.3,1300,false
+SUB-014,SUB-013,2.5,1000,true
+SUB-014,SUB-004,3.0,3000,true
+SUB-003,SUB-010,8.0,3500,false
+SUB-009,SUB-011,9.5,4200,false
+SUB-010,SUB-012,6.8,2600,true
+SUB-015,SUB-016,3.0,1200,true

@@ -1,0 +1,20 @@
+# Substations file
+# code,name,capacity_mw
+code,name,capacity_mw
+SUB-001,Central Principal,250
+SUB-002,Norte Alta,120
+SUB-003,Norte Baja,80
+SUB-004,Oriente Industrial,150
+SUB-005,Oriente Residencial,90
+SUB-006,Sur Principal,200
+SUB-007,Sur Colonia Jardin,60
+SUB-008,Poniente Comercial,110
+SUB-009,Poniente Universidad,70
+SUB-010,Zona Rural Este,40
+SUB-011,Zona Rural Oeste,35
+SUB-012,Aeropuerto,95
+SUB-013,Hospital General,85
+SUB-014,Centro Historico,100
+SUB-015,Parque Solar Norte,45
+SUB-016,Parque Solar Sur,50
+SUB-017,Subestación Aislada,25

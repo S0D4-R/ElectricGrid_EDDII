@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>ElectricGrid.ConsoleApp</RootNamespace>
+    <AssemblyName>ElectricGrid</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ElectricGrid.Core\ElectricGrid.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Sample CSV files are copied next to the executable so they can be loaded out of the box. -->
+  <ItemGroup>
+    <None Update="Data\*.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
