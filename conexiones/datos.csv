@@ -1,0 +1,13 @@
+Tipo,Codigo,Nombre,Capacidad,Origen,Destino,Longitud,Costo,Bidireccional
+ESTACION,E1,Central Norte,5000,,,,,
+ESTACION,E2,Subestacion Sur,3500,,,,,
+ESTACION,E3,Planta Este,4000,,,,,
+ESTACION,E4,Distribuidor Oeste,2000,,,,,
+ESTACION,E5,Nodo Principal,8000,,,,,
+LINEA,,,,E1,E5,15,50,true
+LINEA,,,,E5,E2,20,70,true
+LINEA,,,,E1,E3,10,30,false
+LINEA,,,,E3,E5,12,40,true
+LINEA,,,,E5,E4,25,85,true
+LINEA,,,,E4,E2,18,60,true
+LINEA,,,,E3,E4,30,100,false
