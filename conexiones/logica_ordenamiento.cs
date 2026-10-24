@@ -1,225 +1,267 @@
-using System.Collections.Generic;
+using System;
 using System.IO;
+using System.Collections.Generic;
 
-// Subestacion: codigo, nombre y capacidad
-// linea bidireccional: conecta dos subestacion, cuenta con longitud y costo de mantenimiento
-// linea unidireccional: solo tiene un sentido de la subestacion principal a las secundarias, tambien tiene longitus y costo
-// usar algoritmo dijkstra para calcular la ruta de menor costo para restablecer el suministro entre dos puntos 
+// ESTRUCTURA TRIE (Para buscar nombres)
 
 
-//---- decalaracion de los esqueletos ----
-class SubEstacion(string codigo, string nombre, int capacidad)
+class ListaCadenas
 {
-    public string codigo = codigo;
-    public string nombre = nombre;
-    public int capacidad = capacidad;
-}
+    public string[] elementos;
+    public int cantidad;
 
-class Linea(int longitud, int costo) //datos de la arista
-{
-    public int longitud = longitud;
-    public int costo = costo;
-}
-
-class Arista(Linea linea, string origen, string destino, bool bidireccional)
-{
-    public Linea linea = linea;
-    public string origen = origen;
-    public string destino = destino;
-    public bool bidireccional = bidireccional;
-
-    public Arista(Linea linea, string origen, string destino)
-        : this(linea, origen, destino, true)
+    public ListaCadenas()
     {
+        elementos = new string[4];
+        cantidad = 0;
+    }
+
+    public void Agregar(string valor)
+    {
+        if (cantidad == elementos.Length)
+        {
+            string[] nuevoArreglo = new string[elementos.Length * 2];
+            for (int i = 0; i < elementos.Length; i++) nuevoArreglo[i] = elementos[i];
+            elementos = nuevoArreglo;
+        }
+        elementos[cantidad++] = valor;
     }
 }
 
-class ResultadoRuta(string[] estaciones, long costoTotal)
+class NodoTrie
 {
-    public string[] estaciones = estaciones;
-    public long costoTotal = costoTotal;
+    public NodoTrie[] Hijos;
+    public bool FinDePalabra;
+    public string ValorOriginal; // Guarda el nombre original con mayúsculas
+
+    public NodoTrie()
+    {
+        Hijos = new NodoTrie[256]; 
+        FinDePalabra = false;
+        ValorOriginal = null;
+    }
 }
 
-//---- algoritmo dijkstra ----
+class Trie
+{
+    private NodoTrie raiz;
+
+    public Trie()
+    {
+        raiz = new NodoTrie();
+    }
+
+    private string Normalizar(string texto)
+    {
+        if (texto == null) return "";
+        string resultado = "";
+        int inicio = 0, fin = texto.Length - 1;
+        while (inicio <= fin && texto[inicio] == ' ') inicio++;
+        while (fin >= inicio && texto[fin] == ' ') fin--;
+
+        for (int i = inicio; i <= fin; i++)
+        {
+            char c = texto[i];
+            if (c >= 'A' && c <= 'Z') c = (char)(c + 32); 
+            resultado += c;
+        }
+        return resultado;
+    }
+
+    public void Insertar(string palabra)
+    {
+        string normalizada = Normalizar(palabra);
+        if (normalizada == "") return;
+
+        NodoTrie actual = raiz;
+
+        for (int i = 0; i < normalizada.Length; i++)
+        {
+            char letra = normalizada[i];
+            int indice = letra % 256; 
+
+            if (actual.Hijos[indice] == null)
+            {
+                actual.Hijos[indice] = new NodoTrie();
+            }
+            actual = actual.Hijos[indice];
+        }
+
+        actual.FinDePalabra = true;
+        actual.ValorOriginal = palabra; // Se guarda la palabra original con mayúsculas y espacios
+    }
+
+    public ListaCadenas Autocompletar(string prefijo)
+    {
+        string prefijoNorm = Normalizar(prefijo);
+        ListaCadenas resultado = new ListaCadenas();
+        
+        NodoTrie actual = raiz;
+        for (int i = 0; i < prefijoNorm.Length; i++)
+        {
+            int indice = prefijoNorm[i] % 256;
+            if (actual.Hijos[indice] == null) return resultado;
+            actual = actual.Hijos[indice];
+        }
+
+        RecolectarPalabras(actual, resultado);
+        return resultado;
+    }
+
+    private void RecolectarPalabras(NodoTrie nodo, ListaCadenas resultado)
+    {
+        if (nodo.FinDePalabra)
+        {
+            resultado.Agregar(nodo.ValorOriginal);
+        }
+
+        for (int i = 0; i < 256; i++)
+        {
+            if (nodo.Hijos[i] != null)
+            {
+                RecolectarPalabras(nodo.Hijos[i], resultado);
+            }
+        }
+    }
+}
+
+// ALGORITMO DIJKSTRA Y GRAFOS
+
+
+class SubEstacion
+{
+    public string codigo;
+    public string nombre;
+    public int capacidad;
+
+    public SubEstacion(string codigo, string nombre, int capacidad)
+    {
+        this.codigo = codigo;
+        this.nombre = nombre;
+        this.capacidad = capacidad;
+    }
+}
+
+class Linea
+{
+    public int longitud;
+    public int costo;
+
+    public Linea(int longitud, int costo)
+    {
+        this.longitud = longitud;
+        this.costo = costo;
+    }
+}
+
+class Arista
+{
+    public Linea linea;
+    public string origen;
+    public string destino;
+    public bool bidireccional;
+
+    public Arista(Linea linea, string origen, string destino, bool bidireccional)
+    {
+        this.linea = linea;
+        this.origen = origen;
+        this.destino = destino;
+        this.bidireccional = bidireccional;
+    }
+}
+
+class ResultadoRuta
+{
+    public string[] estaciones;
+    public long costoTotal;
+
+    public ResultadoRuta(string[] estaciones, long costoTotal)
+    {
+        this.estaciones = estaciones;
+        this.costoTotal = costoTotal;
+    }
+}
+
 class GrafoEstaciones
 {
     private readonly SubEstacion[] estaciones;
     private readonly Arista[] aristas;
     private int cantidadEstaciones;
     private int cantidadAristas;
+    public Trie BuscadorNombres; // Trie integrado en el grafo
 
     public GrafoEstaciones(int capacidadEstaciones, int capacidadAristas)
     {
-        if (capacidadEstaciones < 0)
-            throw new ArgumentOutOfRangeException(nameof(capacidadEstaciones), "Las capacidades no pueden ser negativas.");
-        if (capacidadAristas < 0)
-            throw new ArgumentOutOfRangeException(nameof(capacidadAristas), "Las capacidades no pueden ser negativas.");
-
         estaciones = new SubEstacion[capacidadEstaciones];
         aristas = new Arista[capacidadAristas];
+        BuscadorNombres = new Trie();
     }
 
     public void AgregarEstacion(SubEstacion estacion)
     {
-        ArgumentNullException.ThrowIfNull(estacion);
-        if (cantidadEstaciones == estaciones.Length)
-            throw new InvalidOperationException("Se alcanzo la capacidad de estaciones.");
-        if (BuscarEstacion(estacion.codigo) >= 0)
-            throw new ArgumentException("Ya existe una estacion con ese codigo.");
-
         estaciones[cantidadEstaciones++] = estacion;
+        BuscadorNombres.Insertar(estacion.nombre); // Llena el Trie automáticamente
     }
 
-    // CSV con columnas: Tipo,Codigo,Nombre,Capacidad,Origen,Destino,Longitud,Costo,Bidireccional.
-    // Tipo puede ser ESTACION o LINEA. Las lineas requieren true/false en Bidireccional.
-    // Para rutas relativas se busca primero desde el directorio actual y luego junto al ejecutable.
     public static GrafoEstaciones CargarDesdeCsv(string rutaCsv)
     {
-        if (string.IsNullOrWhiteSpace(rutaCsv))
-            throw new ArgumentException("Debe indicar la ruta del archivo CSV.", "rutaCsv");
-
-        string rutaCompleta = ResolverRutaCsv(rutaCsv);
-
-        string[] filas = File.ReadAllLines(rutaCompleta);
-        List<SubEstacion> estacionesCsv = [];
-        List<Arista> lineasCsv = [];
+        string[] filas = File.ReadAllLines(rutaCsv);
+        
+        List<SubEstacion> estacionesCsv = new List<SubEstacion>();
+        List<Arista> lineasCsv = new List<Arista>();
 
         for (int i = 0; i < filas.Length; i++)
         {
-            if (string.IsNullOrWhiteSpace(filas[i]))
-                continue;
+            if (string.IsNullOrWhiteSpace(filas[i])) continue;
 
-            string[] campos = SepararCamposCsv(filas[i]);
-            if (i == 0 && campos.Length > 0 &&
-                campos[0].TrimStart('\uFEFF').Equals("Tipo", StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            if (campos.Length == 0)
-                continue;
+            string[] campos = filas[i].Split(',');
+            if (campos[0].Trim().Equals("Tipo", StringComparison.OrdinalIgnoreCase)) continue;
 
             string tipo = campos[0].Trim();
             if (tipo.Equals("ESTACION", StringComparison.OrdinalIgnoreCase))
             {
-                if (campos.Length < 4)
-                    throw new FormatException("Fila " + (i + 1) + ": faltan datos de la estacion.");
-
-                estacionesCsv.Add(new(
-                    campos[1].Trim(), campos[2].Trim(), int.Parse(campos[3].Trim())));
+                estacionesCsv.Add(new SubEstacion(campos[1].Trim(), campos[2].Trim(), int.Parse(campos[3].Trim())));
             }
             else if (tipo.Equals("LINEA", StringComparison.OrdinalIgnoreCase))
             {
-                if (campos.Length < 9)
-                    throw new FormatException("Fila " + (i + 1) + ": faltan datos de la linea.");
-
-                if (!bool.TryParse(campos[8].Trim(), out bool bidireccional))
-                    throw new FormatException("Fila " + (i + 1) + ": Bidireccional debe ser true o false.");
-
-                lineasCsv.Add(new(
-                    new(int.Parse(campos[6].Trim()), int.Parse(campos[7].Trim())),
+                bool bidireccional = bool.Parse(campos[8].Trim());
+                lineasCsv.Add(new Arista(
+                    new Linea(int.Parse(campos[6].Trim()), int.Parse(campos[7].Trim())),
                     campos[4].Trim(), campos[5].Trim(), bidireccional));
-            }
-            else
-            {
-                throw new FormatException("Fila " + (i + 1) + ": Tipo debe ser ESTACION o LINEA.");
             }
         }
 
         GrafoEstaciones grafo = new GrafoEstaciones(estacionesCsv.Count, lineasCsv.Count);
-        foreach (SubEstacion estacion in estacionesCsv)
-            grafo.AgregarEstacion(estacion);
+        foreach (SubEstacion est in estacionesCsv) grafo.AgregarEstacion(est);
         foreach (Arista arista in lineasCsv)
-            grafo.AgregarLinea(arista.linea, arista.origen, arista.destino, arista.bidireccional);
+        {
+            grafo.aristas[grafo.cantidadAristas++] = arista;
+        }
 
         return grafo;
     }
 
-    private static string ResolverRutaCsv(string rutaCsv)
+    public int BuscarEstacionPorCodigo(string codigo)
     {
-        if (Path.IsPathRooted(rutaCsv))
-            return rutaCsv;
-
-        string[] directoriosIniciales =
-        [
-            Environment.CurrentDirectory,
-            AppDomain.CurrentDomain.BaseDirectory
-        ];
-
-        foreach (string directorioInicial in directoriosIniciales)
+        for (int i = 0; i < cantidadEstaciones; i++)
         {
-            DirectoryInfo directorio = new DirectoryInfo(directorioInicial);
-            while (directorio != null)
-            {
-                string candidato = Path.Combine(directorio.FullName, rutaCsv);
-                if (File.Exists(candidato))
-                    return candidato;
-
-                directorio = directorio.Parent;
-            }
+            if (estaciones[i].codigo == codigo) return i;
         }
-
-        return Path.GetFullPath(rutaCsv);
+        return -1;
     }
 
-    private static string[] SepararCamposCsv(string fila)
+    public SubEstacion ObtenerEstacionPorCodigo(string codigo)
     {
-        List<string> campos = new List<string>();
-        System.Text.StringBuilder campo = new System.Text.StringBuilder();
-        bool entreComillas = false;
-
-        for (int i = 0; i < fila.Length; i++)
-        {
-            char caracter = fila[i];
-            if (caracter == '"')
-            {
-                if (entreComillas && i + 1 < fila.Length && fila[i + 1] == '"')
-                {
-                    campo.Append('"');
-                    i++;
-                }
-                else
-                {
-                    entreComillas = !entreComillas;
-                }
-            }
-            else if (caracter == ',' && !entreComillas)
-            {
-                campos.Add(campo.ToString());
-                campo.Length = 0;
-            }
-            else
-            {
-                campo.Append(caracter);
-            }
-        }
-
-        if (entreComillas)
-            throw new FormatException("El CSV contiene comillas sin cerrar.");
-
-        campos.Add(campo.ToString());
-        return [.. campos];
+        int indice = BuscarEstacionPorCodigo(codigo);
+        return indice >= 0 ? estaciones[indice] : null;
     }
 
-    public void AgregarLinea(Linea linea, string origen, string destino, bool bidireccional)
-    {
-        ArgumentNullException.ThrowIfNull(linea);
-        if (linea.costo < 0)
-            throw new ArgumentException("Dijkstra requiere costos no negativos.");
-        if (BuscarEstacion(origen) < 0 || BuscarEstacion(destino) < 0)
-            throw new ArgumentException("El origen y el destino deben existir en el grafo.");
-        if (cantidadAristas == aristas.Length)
-            throw new InvalidOperationException("Se alcanzo la capacidad de lineas.");
-
-        aristas[cantidadAristas++] = new Arista(linea, origen, destino, bidireccional);
-    }
-
-    // Devuelve el recorrido por codigo de estacion y su costo de mantenimiento total.
-    // Si no existe ruta, estaciones sera un arreglo vacio y costoTotal sera long.MaxValue.
     public ResultadoRuta Dijkstra(string codigoOrigen, string codigoDestino)
     {
-        int indiceOrigen = BuscarEstacion(codigoOrigen);
-        int indiceDestino = BuscarEstacion(codigoDestino);
-        if (indiceOrigen < 0 || indiceDestino < 0)
-            throw new ArgumentException("El origen y el destino deben existir en el grafo.");
+        int indiceOrigen = BuscarEstacionPorCodigo(codigoOrigen);
+        int indiceDestino = BuscarEstacionPorCodigo(codigoDestino);
+        
+        if (indiceOrigen < 0 || indiceDestino < 0) return new ResultadoRuta(new string[0], long.MaxValue);
 
         long[] costos = new long[cantidadEstaciones];
         int[] anterior = new int[cantidadEstaciones];
@@ -232,19 +274,16 @@ class GrafoEstaciones
         }
         costos[indiceOrigen] = 0;
 
-        // Selecciona el nodo no visitado de menor costo mediante busqueda lineal.
         for (int paso = 0; paso < cantidadEstaciones; paso++)
         {
             int actual = -1;
             for (int i = 0; i < cantidadEstaciones; i++)
             {
-                if (!visitada[i] && costos[i] != long.MaxValue &&
-                    (actual < 0 || costos[i] < costos[actual]))
+                if (!visitada[i] && costos[i] != long.MaxValue && (actual < 0 || costos[i] < costos[actual]))
                     actual = i;
             }
 
-            if (actual < 0 || actual == indiceDestino)
-                break;
+            if (actual < 0 || actual == indiceDestino) break;
             visitada[actual] = true;
 
             for (int i = 0; i < cantidadAristas; i++)
@@ -252,13 +291,10 @@ class GrafoEstaciones
                 Arista arista = aristas[i];
                 int vecino = -1;
 
-                if (arista.origen == estaciones[actual].codigo)
-                    vecino = BuscarEstacion(arista.destino);
-                else if (arista.bidireccional && arista.destino == estaciones[actual].codigo)
-                    vecino = BuscarEstacion(arista.origen);
+                if (arista.origen == estaciones[actual].codigo) vecino = BuscarEstacionPorCodigo(arista.destino);
+                else if (arista.bidireccional && arista.destino == estaciones[actual].codigo) vecino = BuscarEstacionPorCodigo(arista.origen);
 
-                if (vecino >= 0 && !visitada[vecino] &&
-                    costos[actual] <= long.MaxValue - arista.linea.costo)
+                if (vecino >= 0 && !visitada[vecino] && costos[actual] <= long.MaxValue - arista.linea.costo)
                 {
                     long nuevoCosto = costos[actual] + arista.linea.costo;
                     if (nuevoCosto < costos[vecino])
@@ -270,56 +306,38 @@ class GrafoEstaciones
             }
         }
 
-        if (costos[indiceDestino] == long.MaxValue)
-            return new ResultadoRuta(Array.Empty<string>(), long.MaxValue);
+        if (costos[indiceDestino] == long.MaxValue) return new ResultadoRuta(new string[0], long.MaxValue);
 
         int cantidadRuta = 0;
-        for (int actual = indiceDestino; actual >= 0; actual = anterior[actual])
-            cantidadRuta++;
+        for (int actual = indiceDestino; actual >= 0; actual = anterior[actual]) cantidadRuta++;
 
         string[] ruta = new string[cantidadRuta];
         int posicion = cantidadRuta - 1;
-        for (int actual = indiceDestino; actual >= 0; actual = anterior[actual])
-            ruta[posicion--] = estaciones[actual].codigo;
+        for (int actual = indiceDestino; actual >= 0; actual = anterior[actual]) ruta[posicion--] = estaciones[actual].codigo;
 
         return new ResultadoRuta(ruta, costos[indiceDestino]);
-    }
-
-    private int BuscarEstacion(string codigo)
-    {
-        for (int i = 0; i < cantidadEstaciones; i++)
-        {
-            if (estaciones[i].codigo == codigo)
-                return i;
-        }
-        return -1;
     }
 
     public void MostrarDatos()
     {
         Console.WriteLine("\nEstaciones:");
-        if (cantidadEstaciones == 0)
-            Console.WriteLine("  No hay estaciones cargadas.");
-
         for (int i = 0; i < cantidadEstaciones; i++)
-            Console.WriteLine("  {0} - {1} (capacidad: {2})", estaciones[i].codigo, estaciones[i].nombre, estaciones[i].capacidad);
-
-        Console.WriteLine("Lineas:");
-        if (cantidadAristas == 0)
-            Console.WriteLine("  No hay lineas cargadas.");
-
-        for (int i = 0; i < cantidadAristas; i++)
-        {
-            Arista arista = aristas[i];
-            Console.WriteLine("  {0} {1} {2} (longitud: {3}, costo: {4})",
-                arista.origen, arista.bidireccional ? "<->" : "->", arista.destino,
-                arista.linea.longitud, arista.linea.costo);
-        }
+            Console.WriteLine($"  {estaciones[i].codigo} - {estaciones[i].nombre}");
     }
 }
 
+
+// MENÚ PRINCIPAL 
+
 class Program
 {
+    static string Pedir(string mensaje)
+    {
+        Console.Write(mensaje);
+        string input = Console.ReadLine();
+        return input == null ? "" : input.Trim();
+    }
+
     static void Main()
     {
         GrafoEstaciones grafo = new GrafoEstaciones(0, 0);
@@ -327,71 +345,89 @@ class Program
 
         while (continuar)
         {
-            Console.WriteLine("\n=== Menu de conexiones electricas ===");
+            Console.WriteLine("\n=== SISTEMA DE CONEXIONES ELÉCTRICAS ===");
             Console.WriteLine("1. Cargar datos desde CSV (datos.csv)");
-            Console.WriteLine("2. Mostrar estaciones y lineas");
-            Console.WriteLine("3. Buscar ruta de menor costo (Dijkstra)");
-            Console.WriteLine("4. Salir");
-            Console.Write("Seleccione una opcion: ");
+            Console.WriteLine("2. Mostrar estaciones");
+            Console.WriteLine("3. Buscar central por prefijo de NOMBRE (Trie)");
+            Console.WriteLine("4. Buscar estación por CÓDIGO");
+            Console.WriteLine("5. Calcular ruta de menor costo (Dijkstra)");
+            Console.WriteLine("0. Salir");
 
-            string opcion = Console.ReadLine();
+            string opcion = Pedir("Seleccione una opción: ");
+
             switch (opcion)
             {
                 case "1":
-                    Console.Write("Ruta del archivo [datos.csv]: ");
-                    string rutaCsv = Console.ReadLine();
-                    if (string.IsNullOrWhiteSpace(rutaCsv))
-                        rutaCsv = "datos.csv";
-
+                    string rutaCsv = Pedir("Ruta del archivo [datos.csv]: ");
+                    if (string.IsNullOrWhiteSpace(rutaCsv)) rutaCsv = "datos.csv";
                     try
                     {
                         grafo = GrafoEstaciones.CargarDesdeCsv(rutaCsv);
-                        Console.WriteLine("CSV cargado correctamente.");
+                        Console.WriteLine("CSV cargado correctamente. El Trie se actualizó con los nombres de las centrales.");
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("No se pudo cargar el CSV: " + ex.Message);
+                        Console.WriteLine("Error al cargar el CSV: " + ex.Message);
                     }
                     break;
+
                 case "2":
                     grafo.MostrarDatos();
                     break;
-                case "3":
-                    Console.Write("Codigo de la estacion de origen: ");
-                    string origen = Console.ReadLine();
-                    Console.Write("Codigo de la estacion de destino: ");
-                    string destino = Console.ReadLine();
-                    try
+
+                case "3": // <-- Opción enlazada al Trie
+                    string prefijo = Pedir("Ingrese el inicio del nombre de la central: ");
+                    if (grafo.BuscadorNombres != null)
                     {
-                        ResultadoRuta resultado = grafo.Dijkstra(origen, destino);
-                        if (resultado.estaciones.Length == 0)
-                            Console.WriteLine("No existe una ruta entre esas estaciones.");
+                        ListaCadenas sugerencias = grafo.BuscadorNombres.Autocompletar(prefijo);
+                        if (sugerencias.cantidad == 0)
+                        {
+                            Console.WriteLine("No se encontraron centrales con ese nombre.");
+                        }
                         else
                         {
-                            Console.WriteLine("Ruta: " + string.Join(" -> ", resultado.estaciones));
-                            Console.WriteLine("Costo total: " + resultado.costoTotal);
+                            Console.WriteLine($"Centrales encontradas ({sugerencias.cantidad}):");
+                            for (int i = 0; i < sugerencias.cantidad; i++)
+                            {
+                                Console.WriteLine(" - " + sugerencias.elementos[i]);
+                            }
                         }
                     }
-                    catch (ArgumentException ex)
+                    else
                     {
-                        Console.WriteLine("No se pudo calcular la ruta: " + ex.Message);
+                        Console.WriteLine("Primero debe cargar el archivo CSV.");
                     }
                     break;
+
                 case "4":
-                    continuar = false;
+                    string codigoBuscar = Pedir("Código de la estación a buscar: ");
+                    SubEstacion est = grafo.ObtenerEstacionPorCodigo(codigoBuscar);
+                    if (est == null) Console.WriteLine("No existe una estación con ese código.");
+                    else Console.WriteLine($"Encontrada: {est.codigo} - {est.nombre} (Capacidad: {est.capacidad})");
                     break;
+
+                case "5":
+                    string origen = Pedir("Código de la estación de origen: ");
+                    string destino = Pedir("Código de la estación de destino: ");
+                    ResultadoRuta resultado = grafo.Dijkstra(origen, destino);
+                    if (resultado.estaciones.Length == 0)
+                        Console.WriteLine("No existe una ruta entre esas estaciones o los códigos son incorrectos.");
+                    else
+                    {
+                        Console.WriteLine("Ruta: " + string.Join(" -> ", resultado.estaciones));
+                        Console.WriteLine("Costo total: " + resultado.costoTotal);
+                    }
+                    break;
+
+                case "0":
+                    continuar = false;
+                    Console.WriteLine("Fin del programa.");
+                    break;
+
                 default:
-                    Console.WriteLine("Opcion no valida.");
+                    Console.WriteLine("Opción inválida.");
                     break;
             }
         }
     }
-
 }
-
-
-
-
-
-
-
