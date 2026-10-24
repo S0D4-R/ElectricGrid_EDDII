@@ -2,7 +2,12 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- Targets the .NET version of whichever SDK builds it (8, 9, 10...), so no extra packages or
+         runtimes are needed and nothing depends on the user's NuGet configuration. Requires .NET 8 SDK or newer. -->
+    <TargetFramework>net$(BundledNETCoreAppTargetFrameworkVersion)</TargetFramework>
+    <!-- If the app is ever built with an older SDK but run on a newer runtime, accept it. -->
+    <RollForward>Major</RollForward>
+
     <RootNamespace>ElectricGrid.ConsoleApp</RootNamespace>
     <AssemblyName>ElectricGrid</AssemblyName>
     <Nullable>enable</Nullable>
