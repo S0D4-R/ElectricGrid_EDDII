@@ -43,15 +43,21 @@ src/
 │   ├── IO/                     GridDataLoader (carga de CSV/TXT)
 │   └── Reporting/              GridReportBuilder (reporte en texto)
 └── ElectricGrid.ConsoleApp/    Interfaz de consola
+<<<<<<< HEAD
     ├── Program.cs              Único punto de entrada (elige la interfaz)
     ├── UI/                     Menú clásico numerado
     ├── Tui/                    Interfaz de pantalla completa con dibujo del grafo
+=======
+    ├── Program.cs              Único punto de entrada
+    ├── UI/                     Menú, lectura de datos, presentación
+>>>>>>> f5918197325d8e1717e70756f38b03ec5147e620
     └── Data/                   substations.csv, lines.csv (ejemplos)
 ```
 
 `Core` no usa `Console`; toda operación devuelve objetos de resultado. Para una GUI futura basta crear un
 proyecto nuevo que referencie `Core` y use `IPowerGridService`.
 
+<<<<<<< HEAD
 ## Requisitos y ejecución
 
 Solo el **SDK de .NET 8 o superior** (`dotnet --version`). El proyecto toma la versión de tu SDK
@@ -59,6 +65,9 @@ automáticamente y no usa paquetes de NuGet, así que no hay nada más que insta
 
 Si cambiaste de versión de .NET y aparecen errores raros, borra las carpetas generadas y vuelve a ejecutar:
 `rm -rf src/*/bin src/*/obj`.
+=======
+## Ejecución
+>>>>>>> f5918197325d8e1717e70756f38b03ec5147e620
 
 ```bash
 dotnet build
@@ -68,6 +77,7 @@ dotnet run --project src/ElectricGrid.ConsoleApp -- --tui --ascii  # TUI sin car
 ```
 
 Opción **3** del menú: carga los datos de ejemplo. Mientras el Trie esté pendiente, las subestaciones se
+<<<<<<< HEAD
 seleccionan por **código** (por ejemplo `SUB-004`); en la TUI el formulario muestra una vista previa del código escrito.
 
 ## Interfaz TUI (`--tui`)
@@ -94,6 +104,12 @@ subestaciones o muchas líneas cruzadas se vuelve difícil de leer; para esos ca
 
 ## Archivos de datos (.csv / .txt)
 
+=======
+seleccionan por **código** (por ejemplo `SUB-004`).
+
+## Archivos de datos (.csv / .txt)
+
+>>>>>>> f5918197325d8e1717e70756f38b03ec5147e620
 `substations.csv`: `code,name,capacity_mw`
 ```
 SUB-001,Central Principal,250
