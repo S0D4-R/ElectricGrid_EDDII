@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Usa la versión de .NET del SDK instalado (8 o superior); no requiere paquetes externos. -->
+    <TargetFramework>net$(BundledNETCoreAppTargetFrameworkVersion)</TargetFramework>
+    <RollForward>Major</RollForward>
+    <RootNamespace>ElectricGrid</RootNamespace>
+    <AssemblyName>ElectricGrid</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!-- Los archivos de ejemplo se copian junto al ejecutable. -->
+  <ItemGroup>
+    <None Update="Data\*.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

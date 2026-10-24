@@ -1,14 +1,25 @@
 # Gestión de Red Eléctrica Municipal
 
-**Estructura de Datos II – Proyecto de Laboratorio No. 2** · C# (.NET 8) · Aplicación de consola
+**Estructura de Datos II – Proyecto de Laboratorio No. 2** · C# · Interfaz de texto en pantalla completa (TUI)
 
 Administra las subestaciones y líneas de distribución de un municipio: registro, búsqueda por código,
-recorridos, zonas eléctricas conectadas y validación de líneas nuevas. Todas las estructuras están
-implementadas desde cero (sin `List`, `Dictionary`, `HashSet`, `SortedSet` ni `PriorityQueue`;
-solo `Queue<T>` como cola de visita en BFS, según el enunciado).
+recorridos, zonas eléctricas conectadas, validación de líneas nuevas y dibujo del grafo en la terminal.
 
 > **Estado:** el **Trie** y el algoritmo de **Dijkstra** están como espacios marcados para otros integrantes
 > (ver [Pendientes](#pendientes)). Todo lo demás funciona.
+
+## Ejecución
+
+Requisito: **SDK de .NET 8 o superior** (`dotnet --version`). El proyecto toma la versión de tu SDK y no usa paquetes de NuGet.
+
+```bash
+dotnet run
+```
+
+Se ejecuta desde la carpeta raíz del repositorio (donde está `ElectricGrid.csproj`) y no necesita parámetros.
+Funciona en cualquier terminal de **80×24 o más**; si los recuadros se ven mal, usar la opción «ASCII / Unicode»
+del menú o iniciar con `dotnet run -- --ascii`. Si cambias de versión de .NET y hay errores, borra las carpetas
+generadas con `rm -rf bin obj`.
 
 ## Estructuras y responsables
 
@@ -32,57 +43,36 @@ dentro de la misma zona, y el operador decide si la aprueba.
 
 ## Arquitectura
 
+Un solo proyecto, organizado en carpetas:
+
 ```
-ElectricGrid.sln
-src/
-├── ElectricGrid.Core/          Lógica sin interfaz (reutilizable por una GUI)
-│   ├── Collections/            ArrayBuffer<T> (arreglo dinámico propio)
-│   ├── DataStructures/         HashTable, Graph, DisjointSet, Trie
-│   ├── Models/                 Substation, PowerLine y objetos de resultado
-│   ├── Services/               IPowerGridService, PowerGridService (integra las estructuras)
-│   ├── IO/                     GridDataLoader (carga de CSV/TXT)
-│   └── Reporting/              GridReportBuilder (reporte en texto)
-└── ElectricGrid.ConsoleApp/    Interfaz de consola
-<<<<<<< HEAD
-    ├── Program.cs              Único punto de entrada (elige la interfaz)
-    ├── UI/                     Menú clásico numerado
-    ├── Tui/                    Interfaz de pantalla completa con dibujo del grafo
-=======
-    ├── Program.cs              Único punto de entrada
-    ├── UI/                     Menú, lectura de datos, presentación
->>>>>>> f5918197325d8e1717e70756f38b03ec5147e620
-    └── Data/                   substations.csv, lines.csv (ejemplos)
+ElectricGrid.csproj
+Program.cs                  Único punto de entrada
+Collections/                ArrayBuffer<T> y ArrayUtils (arreglo dinámico y utilidades propias)
+DataStructures/             HashTable, Graph, DisjointSet, Trie
+Models/                     Substation, PowerLine y objetos de resultado
+Services/                   IPowerGridService, PowerGridService (integra las estructuras)
+IO/                         GridDataLoader (carga de CSV/TXT)
+Reporting/                  GridReportBuilder (reporte en texto)
+Tui/                        Pantalla, menú, ventanas y dibujo del grafo
+Data/                       subestaciones.csv, lineas.csv (ejemplos)
 ```
 
-`Core` no usa `Console`; toda operación devuelve objetos de resultado. Para una GUI futura basta crear un
-proyecto nuevo que referencie `Core` y use `IPowerGridService`.
+Las carpetas de lógica (`Collections`, `DataStructures`, `Models`, `Services`, `IO`, `Reporting`) no usan la consola ni
+dependen de `Tui`: toda operación devuelve objetos de resultado. Solo `Tui/` y `Program.cs` interactúan con
+la terminal. Para una GUI futura bastaría reemplazar `Tui/` y usar `IPowerGridService`.
 
-<<<<<<< HEAD
-## Requisitos y ejecución
+## Cumplimiento de la implementación propia
 
-Solo el **SDK de .NET 8 o superior** (`dotnet --version`). El proyecto toma la versión de tu SDK
-automáticamente y no usa paquetes de NuGet, así que no hay nada más que instalar.
+- No se usa `List<T>`, `Dictionary`, `HashSet`, `SortedSet`, `PriorityQueue` ni LINQ.
+- Las estructuras obligatorias solo usan arreglos y nodos propios; `ArrayBuffer<T>` y `ArrayUtils` reemplazan
+  a `List<T>` y a `Array.Resize/Clear`.
+- El único tipo de colección nativo es `Queue<T>`, exclusivamente como cola de visita en el recorrido BFS
+  (`Graph.BreadthFirstTraversal`).
+- Lo nativo se limita a soporte auxiliar: lectura de archivos, manejo de cadenas y consola.
 
-Si cambiaste de versión de .NET y aparecen errores raros, borra las carpetas generadas y vuelve a ejecutar:
-`rm -rf src/*/bin src/*/obj`.
-=======
-## Ejecución
->>>>>>> f5918197325d8e1717e70756f38b03ec5147e620
+## Interfaz TUI
 
-```bash
-dotnet build
-dotnet run --project src/ElectricGrid.ConsoleApp                 # menú clásico numerado
-dotnet run --project src/ElectricGrid.ConsoleApp -- --tui        # interfaz TUI con grafo dibujado
-dotnet run --project src/ElectricGrid.ConsoleApp -- --tui --ascii  # TUI sin caracteres de recuadro
-```
-
-Opción **3** del menú: carga los datos de ejemplo. Mientras el Trie esté pendiente, las subestaciones se
-<<<<<<< HEAD
-seleccionan por **código** (por ejemplo `SUB-004`); en la TUI el formulario muestra una vista previa del código escrito.
-
-## Interfaz TUI (`--tui`)
-
-Pantalla completa para cualquier terminal de **80×24 o más**. Usa solo `System.Console`, sin paquetes externos.
 Menú a la izquierda y, a la derecha, el **grafo dibujado**: cada subestación es un nodo `[SUB-001]` coloreado por
 zona eléctrica (componente de Union-Find), las líneas de doble sentido son `───` y las de un solo sentido
 terminan en flecha `──>`. La posición de los nodos se calcula con un algoritmo de fuerzas (Fruchterman-Reingold).
@@ -94,48 +84,42 @@ terminan en flecha `──>`. La posición de los nodos se calcula con un algori
 | `Enter` (en el grafo) | Detalle de la subestación seleccionada |
 | `B` / `D` | BFS / DFS desde la seleccionada (se resalta en amarillo) |
 | `R` | Ruta óptima; el camino se resalta cuando exista Dijkstra |
-| `C` / `L` / `F` | Quitar resaltado / cambiar etiquetas (completa o corta) / grafo a pantalla completa |
+| `C` / `L` / `F` | Quitar resaltado / cambiar etiquetas (completas o cortas) / grafo a pantalla completa |
+| `/` | Buscar subestación por parte del nombre o del código (desde cualquier panel) |
 | `?` / `Q` | Ayuda / salir |
 
-Se adapta al redimensionar la ventana y cambia a etiquetas cortas cuando hay muchos nodos. Si los recuadros se ven
-mal, usar `--ascii` o la opción «Toggle ASCII / Unicode». Límites: el dibujo es automático, así que con más de ~40
-subestaciones o muchas líneas cruzadas se vuelve difícil de leer; para esos casos usar las listas del menú.
-`--tui-snapshot --size=100x30` imprime un cuadro como texto (útil para documentar).
+Se adapta al redimensionar la ventana y pasa a etiquetas cortas cuando hay muchos nodos. Con más de ~40
+subestaciones o muchas líneas cruzadas el dibujo se vuelve difícil de leer; para esos casos usar las listas del menú.
 
 ## Archivos de datos (.csv / .txt)
 
-=======
-seleccionan por **código** (por ejemplo `SUB-004`).
-
-## Archivos de datos (.csv / .txt)
-
->>>>>>> f5918197325d8e1717e70756f38b03ec5147e620
-`substations.csv`: `code,name,capacity_mw`
+`subestaciones.csv`: `codigo,nombre,capacidad_mw`
 ```
 SUB-001,Central Principal,250
 ```
 
-`lines.csv`: `source_code,target_code,length_km,maintenance_cost,bidirectional`
+`lineas.csv`: `origen,destino,longitud_km,costo_mantenimiento,doble_sentido`
 ```
-SUB-001,SUB-002,4.5,1800,false    ← un solo sentido: SUB-001 → SUB-002
-SUB-001,SUB-014,1.8,900,true      ← doble sentido
+SUB-001,SUB-002,4.5,1800,false
+SUB-001,SUB-014,1.8,900,true
 ```
-Encabezado opcional; se ignoran líneas vacías y las que empiezan con `#`; decimales con punto; `bidirectional`
-es opcional (por defecto `true`). El archivo se busca en la ruta indicada, junto al ejecutable y en su carpeta
-`Data`. Las filas inválidas se omiten y se reportan con su número de línea.
+Encabezado opcional (en español o inglés); se ignoran líneas vacías y las que empiezan con `#`; decimales con
+punto; `doble_sentido` es opcional (por defecto `true`) y acepta `true/false/si/no/1/0`. El archivo se busca en la
+ruta indicada, junto al ejecutable y en su carpeta `Data`. Las filas inválidas se omiten y se reportan con su
+número de línea.
 
 ## Menú
 
-| Opciones | Función |
+| Sección | Opciones |
 |---|---|
-| 1–3, 23 | Cargar subestaciones, líneas o datos de ejemplo; borrar todo |
-| 4–8 | Registrar, buscar por código, eliminar, autocompletar *(pendiente)* y listar subestaciones |
-| 9–12 | Registrar, proponer (validación de zona), eliminar y listar líneas |
-| 13 | Ruta óptima *(pendiente Dijkstra; ya valida con Hash y Union-Find)* |
-| 14–15 | Recorrido BFS y DFS |
-| 16–17 | ¿Misma zona eléctrica? / listar zonas |
-| 18 | Resumen y exportación del reporte |
-| 19–22 | Inspección interna de Hash, Grafo, Trie y Union-Find |
+| Datos | Cargar ejemplo, cargar subestaciones, cargar líneas, borrar todo |
+| Subestaciones | Registrar, buscar por código, buscar por nombre *(tecla `/`)*, eliminar, listar |
+| Líneas | Registrar, proponer línea nueva (validación de zona), eliminar, listar |
+| Análisis | Ruta óptima *(pendiente Dijkstra)*, BFS, DFS, ¿misma zona?, listar zonas, reporte/exportar |
+| Herramientas | Ver estructuras internas, ASCII/Unicode, ayuda, salir |
+
+Mientras el Trie esté pendiente, las subestaciones se seleccionan por **código** (por ejemplo `SUB-004`); los
+formularios muestran una vista previa de la subestación escrita.
 
 ## Complejidad (Big-O)
 
@@ -170,11 +154,15 @@ Buscar `TODO [` en la solución para ubicar cada punto. Nada más requiere cambi
 - Implementar `Graph.ShortestPath` y quitar el `NotImplementedException`. Ya existen `BuildPath(...)`,
   `PathResult.NotFound()` y `GraphEdge.WeightFor(...)`.
 - Crear `Collections/MinHeap.cs` (cola de prioridad propia; `PriorityQueue` está prohibida).
-- `FindOptimalRoute` y la opción 13 ya están listos y no cambian.
+- `FindOptimalRoute` y la opción «Ruta óptima» ya están listos y no cambian; el camino se resalta solo en el grafo.
 
 **Trie** (`TODO [TRIE]`)
 - Implementar los métodos de `Trie.cs` (las firmas ya están definidas).
 - En `PowerGridService.cs`: descomentar el campo `_nameIndex` y sus usos en `RegisterSubstation`,
   `RemoveSubstation` y `Clear`; reemplazar el cuerpo de `SuggestSubstations` por el código comentado;
   poner `SupportsAutocomplete` en `true` y hacer que `DescribeTrie` devuelva `_nameIndex.Describe()`.
-- La consola activa sola el autocompletado en vivo (escribir + TAB) y las opciones 7 y 21.
+- Los formularios de la TUI aceptarán nombres automáticamente cuando `SupportsAutocomplete` sea `true`.
+- La búsqueda por nombre (opción del menú y tecla `/`) ya funciona con una búsqueda lineal provisional
+  (`PowerGridService.LinearSearch`, por coincidencia parcial). El bloque `TODO [TRIE]` dentro de
+  `SearchSubstations` la reemplaza por la búsqueda por prefijo en cuanto `SupportsAutocomplete` sea `true`;
+  después se puede borrar `LinearSearch`. La TUI no necesita cambios.
