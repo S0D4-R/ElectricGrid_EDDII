@@ -1,7 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- Targets the .NET version of whichever SDK builds it (8, 9, 10...), so no extra packages or
+         runtimes are needed and nothing depends on the user's NuGet configuration. Requires .NET 8 SDK or newer. -->
+    <TargetFramework>net$(BundledNETCoreAppTargetFrameworkVersion)</TargetFramework>
+
     <RootNamespace>ElectricGrid.Core</RootNamespace>
     <AssemblyName>ElectricGrid.Core</AssemblyName>
     <Nullable>enable</Nullable>
