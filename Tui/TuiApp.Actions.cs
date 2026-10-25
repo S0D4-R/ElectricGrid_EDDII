@@ -35,7 +35,7 @@ namespace ElectricGrid.Tui
                 new MenuItem("Eliminar línea", ActionRemoveLine),
                 new MenuItem("Listar líneas", ActionListLines),
                 new MenuItem("Análisis", null),
-                new MenuItem("Ruta óptima", ActionRoute),
+                new MenuItem("Dijkstra", ActionRoute),
                 new MenuItem("Recorrido BFS", () => ActionTraversal(true)),
                 new MenuItem("Recorrido DFS", () => ActionTraversal(false)),
                 new MenuItem("¿Misma zona eléctrica?", ActionSameZone),
@@ -147,7 +147,7 @@ namespace ElectricGrid.Tui
 
         private void ActionFindSubstation()
         {
-            string[]? v = ShowForm("Buscar subestación", new[] { SubstationField("Código") });
+            string[]? v = ShowForm("Buscar subestación", new[] { new FormField("Código", string.Empty, FieldKind.Text) });
             if (v == null)
             {
                 return;
@@ -171,7 +171,7 @@ namespace ElectricGrid.Tui
         {
             string[]? v = ShowForm("Buscar subestación", new[]
             {
-                new FormField("Texto", string.Empty, FieldKind.Text, "parte del nombre o del código")
+                new FormField("Texto", string.Empty, FieldKind.Substation, "parte del nombre o del código")
             });
 
             if (v == null)

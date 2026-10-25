@@ -271,6 +271,17 @@ namespace ElectricGrid.Tui
                         active++;
                         break;
                     case ConsoleKey.Tab:
+                        if (fields[active].Kind == FieldKind.Substation && fields[active].Value.Length > 0 && !fresh)
+                        {
+                            Substation[] candidates = _service.SuggestSubstations(fields[active].Value, 1);
+                            if (candidates.Length > 0)
+                            {
+                                fields[active].Value = candidates[0].Name; 
+                                break; // Detiene el salto para que el usuario vea cómo se autocompletó
+                            }
+                        }
+                        
+                        // Comportamiento original del Tab (salto de campo)
                         active = shift ? (active + fields.Length - 1) % fields.Length : (active + 1) % fields.Length;
                         break;
                     case ConsoleKey.DownArrow:
@@ -315,12 +326,13 @@ namespace ElectricGrid.Tui
 
         private void DrawFieldHint(FormField field, int x, int y, int width)
         {
+            
             if (field.Kind == FieldKind.Substation)
             {
                 string text = field.Value.Trim();
                 if (text.Length == 0)
                 {
-                    _buffer.Text(x, y, "escriba el código de una subestación", ConsoleColor.DarkGray, DialogBack, width);
+                    _buffer.Text(x, y, "escriba el código o nombre", ConsoleColor.DarkGray, DialogBack, width);
                     return;
                 }
 
@@ -331,15 +343,19 @@ namespace ElectricGrid.Tui
                     string description = found == null ? code : $"{found.Code}  {found.Name}  ({found.CapacityMw:F1} MW)";
                     _buffer.Text(x, y, "ok: " + description, ConsoleColor.Green, DialogBack, width);
                 }
-                else
+                else if (_service.SupportsAutocomplete)
                 {
-                    string message = _service.SupportsAutocomplete ? "sin coincidencia única" : "no existe una subestación con ese código";
-                    _buffer.Text(x, y, message, ConsoleColor.Red, DialogBack, width);
+                    // NUEVO: Mostrar sugerencia si no hay coincidencia exacta
+                    Substation[] candidates = _service.SuggestSubstations(text, 1);
+                    if (candidates.Length > 0)
+                    {
+                        _buffer.Text(x, y, $"sugiere: {candidates[0].Name} ({candidates[0].Code})", ConsoleColor.Yellow, DialogBack, width);
+                    }
+                    else
+                    {
+                        _buffer.Text(x, y, "sin coincidencias", ConsoleColor.Red, DialogBack, width);
+                    }
                 }
-            }
-            else if (field.Help.Length > 0)
-            {
-                _buffer.Text(x, y, field.Help, ConsoleColor.DarkGray, DialogBack, width);
             }
         }
 

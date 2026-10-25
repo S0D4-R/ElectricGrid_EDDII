@@ -59,7 +59,7 @@ namespace ElectricGrid.Tui
                     }
 
                     ConsoleColor color = edgeHighlighted[e]
-                        ? ConsoleColor.Yellow
+                        ? ConsoleColor.Green
                         : (highlighting ? ConsoleColor.DarkGray : ZoneColor(graph.ZoneOfNode[graph.EdgeFrom[e]]));
 
                     DrawEdge(buffer, glyphs, ox, oy, nodeX, nodeY, labels, graph.EdgeFrom[e], graph.EdgeTo[e],
@@ -75,7 +75,7 @@ namespace ElectricGrid.Tui
                 if (nodeHighlighted[i])
                 {
                     fore = ConsoleColor.Black;
-                    back = ConsoleColor.Yellow;
+                    back = ConsoleColor.Green;
                 }
 
                 if (i == selected)

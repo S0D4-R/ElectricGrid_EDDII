@@ -20,6 +20,7 @@ namespace ElectricGrid.Services
 
         /// <summary>Sugiere subestaciones cuyo nombre empieza con el prefijo, usando el Trie y la tabla hash.</summary>
         Substation[] SuggestSubstations(string prefix, int maxResults);
+        
 
         /// <summary>
         /// Busca subestaciones por texto. Usa el Trie cuando está disponible y, mientras tanto,

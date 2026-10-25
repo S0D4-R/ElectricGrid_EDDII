@@ -20,10 +20,11 @@ namespace ElectricGrid.Services
         private const int DefaultSuggestionLimit = 10;
 
         private HashTable<Substation> _registry = new HashTable<Substation>();
+        
         private Graph _graph = new Graph();
         private DisjointSet _zones = new DisjointSet();
         // TODO [TRIE]: descomentar al implementar Trie.cs.
-        // private Trie _nameIndex = new Trie();
+        private Trie _nameIndex = new Trie();
         private ArrayBuffer<Substation?> _substationByVertex = new ArrayBuffer<Substation?>();
 
         /// <inheritdoc />
@@ -61,7 +62,7 @@ namespace ElectricGrid.Services
 
             Substation substation = new Substation(normalizedCode, cleanName, capacityMw, vertex);
             _registry.Insert(normalizedCode, substation);
-            // TODO [TRIE]: _nameIndex.Insert(cleanName, normalizedCode);
+            _nameIndex.Insert(cleanName, normalizedCode);
             _substationByVertex.Add(substation);
 
             return OperationResult.Ok($"Subestación '{normalizedCode}' ({cleanName}) registrada.");
@@ -76,7 +77,7 @@ namespace ElectricGrid.Services
                 return OperationResult.Fail($"No se encontró la subestación '{NormalizeCode(code)}'.");
             }
 
-            // TODO [TRIE]: _nameIndex.Remove(substation.Name, substation.Code);
+            _nameIndex.Remove(substation.Name, substation.Code);
             _registry.Remove(substation.Code);
             _graph.RemoveVertex(substation.VertexIndex);
             _substationByVertex[substation.VertexIndex] = null;
@@ -100,19 +101,17 @@ namespace ElectricGrid.Services
         /// <inheritdoc />
         public Substation[] SuggestSubstations(string prefix, int maxResults)
         {
-            // TODO [TRIE]: reemplazar el cuerpo por el flujo en dos pasos y activar SupportsAutocomplete.
-            // int limit = maxResults <= 0 ? DefaultSuggestionLimit : maxResults;
-            // TrieMatch[] matches = _nameIndex.SearchByPrefix(prefix, limit);
-            // ArrayBuffer<Substation> suggestions = new ArrayBuffer<Substation>(matches.Length + 1);
-            // for (int i = 0; i < matches.Length; i++)
-            // {
-            //     if (_registry.TryGetValue(matches[i].Payload, out Substation substation))
-            //     {
-            //         suggestions.Add(substation);
-            //     }
-            // }
-            // return suggestions.ToArray();
-            return new Substation[0];
+            int limit = maxResults <= 0 ? DefaultSuggestionLimit : maxResults;
+            TrieMatch[] matches = _nameIndex.SearchByPrefix(prefix, limit);
+            ArrayBuffer<Substation> suggestions = new ArrayBuffer<Substation>(matches.Length + 1);
+            for (int i = 0; i < matches.Length; i++)
+            {
+                if (_registry.TryGetValue(matches[i].Payload, out Substation substation))
+                {
+                    suggestions.Add(substation);
+                }
+            }
+            return suggestions.ToArray();
         }
 
         /// <inheritdoc />
@@ -130,7 +129,7 @@ namespace ElectricGrid.Services
         }
 
         /// <inheritdoc />
-        public bool SupportsAutocomplete => false; // TODO [TRIE]: cambiar a true.
+        public bool SupportsAutocomplete => true; 
 
         /// <inheritdoc />
         public Substation[] GetAllSubstations()
@@ -270,52 +269,83 @@ namespace ElectricGrid.Services
                 directExists);
         }
 
+        
+
         /// <inheritdoc />
-        public RouteResult FindOptimalRoute(string sourceCode, string targetCode, EdgeWeightKind criterion)
+        public RouteResult FindOptimalRoute(string startCode, string endCode, EdgeWeightKind criterion)
         {
-            Substation? source = FindSubstation(sourceCode);
-            if (source == null)
+            // 1. Validar que ambas subestaciones existan usando TryGetValue de la tabla hash
+            if (!_registry.TryGetValue(startCode, out _))
             {
-                return Failed(RouteStatus.SourceNotFound, $"El origen '{NormalizeCode(sourceCode)}' no está registrado.", criterion);
+                return new RouteResult(RouteStatus.SourceNotFound, $"La subestación de origen '{startCode}' no existe.", Array.Empty<Substation>(), 0, 0, 0, criterion);
+            }
+            
+            if (!_registry.TryGetValue(endCode, out _))
+            {
+                return new RouteResult(RouteStatus.TargetNotFound, $"La subestación de destino '{endCode}' no existe.", Array.Empty<Substation>(), 0, 0, 0, criterion);
             }
 
-            Substation? target = FindSubstation(targetCode);
-            if (target == null)
+            // 2. Instanciar y poblar el grafo de Dijkstra
+            // (Usamos GetAllSubstations().Length si _registry.Count no está disponible en tu HashTable)
+            Substation[] allSubstations = GetAllSubstations();
+            DijkstraGraph graph = new DijkstraGraph(allSubstations.Length);
+            PowerLine[] allLines = GetAllLines();
+
+            for (int i = 0; i < allLines.Length; i++)
             {
-                return Failed(RouteStatus.TargetNotFound, $"El destino '{NormalizeCode(targetCode)}' no está registrado.", criterion);
+                PowerLine line = allLines[i];
+                double weight = criterion == EdgeWeightKind.Length ? line.LengthKm : line.MaintenanceCost;
+                
+                graph.AddEdge(line.SourceCode, line.TargetCode, weight);
+                if (line.IsBidirectional)
+                {
+                    graph.AddEdge(line.TargetCode, line.SourceCode, weight);
+                }
             }
 
-            if (source.Code == target.Code)
+            // 3. Ejecutar el algoritmo
+            ShortestPathResult shortestPath = graph.FindShortestPath(startCode, endCode);
+
+            // 4. Evaluar el resultado
+            if (!shortestPath.IsReachable)
             {
-                return new RouteResult(RouteStatus.Found, "El origen y el destino son la misma subestación.",
-                    new[] { source }, 0, 0, 0, criterion);
+                return new RouteResult(RouteStatus.NoDirectedPath, $"No existe una ruta posible entre {startCode} y {endCode}.", Array.Empty<Substation>(), 0, 0, 0, criterion);
             }
 
-            if (!_zones.AreConnected(source.VertexIndex, target.VertexIndex))
+            // 5. Reconstruir los objetos Substation y calcular totales
+            Substation[] pathSubstations = new Substation[shortestPath.Path.Length];
+            double totalLength = 0;
+            double totalCost = 0;
+
+            for (int i = 0; i < shortestPath.Path.Length; i++)
             {
-                return Failed(RouteStatus.DifferentZones,
-                    $"{source.Code} y {target.Code} están en zonas eléctricas distintas; no puede existir una ruta. No se ejecutó Dijkstra.",
-                    criterion);
+                string nodeCode = shortestPath.Path[i];
+                
+                // Extraer la subestación
+                _registry.TryGetValue(nodeCode, out Substation sub);
+                pathSubstations[i] = sub;
+
+                // Sumar costos y longitudes (excepto en el nodo inicial)
+                if (i > 0)
+                {
+                    string prevCode = shortestPath.Path[i - 1];
+                    
+                    for (int j = 0; j < allLines.Length; j++)
+                    {
+                        PowerLine line = allLines[j];
+                        if ((line.SourceCode == prevCode && line.TargetCode == nodeCode) ||
+                            (line.IsBidirectional && line.TargetCode == prevCode && line.SourceCode == nodeCode))
+                        {
+                            totalLength += line.LengthKm;
+                            totalCost += line.MaintenanceCost;
+                            break;
+                        }
+                    }
+                }
             }
 
-            // TODO [DIJKSTRA]: esta llamada no requiere cambios cuando se implemente Graph.ShortestPath.
-            PathResult path = _graph.ShortestPath(source.VertexIndex, target.VertexIndex, criterion);
-            if (!path.Found)
-            {
-                return Failed(RouteStatus.NoDirectedPath,
-                    "Ambas subestaciones comparten zona, pero las líneas de un solo sentido impiden llegar al destino.",
-                    criterion);
-            }
-
-            Substation[] route = new Substation[path.Vertices.Length];
-            for (int i = 0; i < route.Length; i++)
-            {
-                route[i] = _substationByVertex[path.Vertices[i]]!;
-            }
-
-            string metricName = criterion == EdgeWeightKind.Length ? "la longitud" : "el costo de mantenimiento";
-            return new RouteResult(RouteStatus.Found, $"Ruta encontrada optimizando {metricName}.",
-                route, path.TotalWeight, path.TotalLength, path.TotalCost, criterion);
+            // 6. Retornar éxito con todos los parámetros que exige tu constructor
+            return new RouteResult(RouteStatus.Found, "Ruta óptima calculada exitosamente.", pathSubstations, shortestPath.TotalDistance, totalLength, totalCost, criterion);
         }
 
         /// <inheritdoc />
