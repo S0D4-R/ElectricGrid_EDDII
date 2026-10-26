@@ -1,3 +1,5 @@
+//Rodrigo Herman
+
 using System;
 
 namespace ElectricGrid.DataStructures
