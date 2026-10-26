@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 
 namespace ElectricGrid.DataStructures
 {
@@ -305,6 +306,47 @@ namespace ElectricGrid.DataStructures
         public string Describe()
         {
             return $"Trie en memoria: {_count} registros vinculados en {_nodeCount} nodos totales.";
+        }
+
+        public string ObtenerEstructuraVisual()
+        {
+            StringBuilder sb = new StringBuilder();
+            
+            // Encabezado exacto al de tu imagen
+            sb.AppendLine("(raíz) [*] = fin de palabra");
+            
+            // Iteramos sobre los hijos de la raíz para no dibujar el nodo raíz ('\0')
+            for (int i = 0; i < _root.ChildCount; i++)
+            {
+                GenerarRama(_root.Children![i], sb, "");
+            }
+            
+            return sb.ToString();
+        }
+
+        private void GenerarRama(Node nodo, StringBuilder sb, string sangria)
+        {
+            if (nodo == null) return;
+
+            // 1. Aplicar la sangría
+            sb.Append(sangria);
+            
+            // 2. Dibujar la rama y la letra
+            sb.Append("  └─ "); 
+            sb.Append(nodo.Key);
+            
+            // 3. Verificar si es fin de palabra (en tu caso, si tiene Payloads)
+            if (nodo.PayloadCount > 0) 
+            {
+                sb.Append(" [*]");
+            }
+            sb.AppendLine();
+
+            // 4. Llamada recursiva para los hijos, aumentando la sangría (4 espacios)
+            for (int i = 0; i < nodo.ChildCount; i++)
+            {
+                GenerarRama(nodo.Children![i], sb, sangria + "    ");
+            }
         }
     }
 }

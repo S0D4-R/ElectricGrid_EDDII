@@ -486,7 +486,7 @@ namespace ElectricGrid.Services
         public string DescribeGraph() => _graph.Describe(LabelOf);
 
         /// <inheritdoc />
-        public string DescribeTrie() => "El Trie está pendiente de implementación.\n"; // TODO [TRIE]: devolver _nameIndex.Describe().
+        public string DescribeTrie() => _nameIndex.ObtenerEstructuraVisual(); // TODO [TRIE]: devolver _nameIndex.Describe().
 
         /// <inheritdoc />
         public string DescribeDisjointSets()
