@@ -234,4 +234,14 @@ n = elementos, V = vértices, E = aristas, k = largo del texto, p = largo del pr
 
 ## No one is off the grid
 
-![Bomb](https://media1.tenor.com/m/iAnI0R6EeIkAAAAd/dedsec-boom.gif)
+⢀⣀⣀⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⢀⡉⠐⠀⠀⠀⠀⠀⠀⠀⠀⠀⠒⠒⢒⠒⠒⠂⠀⠀⠤⠤⠤⠤⠤⠄
+⠀⠀⣲⠞⢻⣿⣶⡀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⡶⣦⣤⣤⣖⣀⡀⠀⠀⠀⠀⠀
+⠐⣮⡏⠀⠉⢹⣿⢷⠀⠀⠀⠀⠀⠀⠀⢠⡞⠉⠀⠉⠉⣿⣿⣿⣿⣿⣄⣂⡄⠀
+⠀⠀⢃⠀⠀⢀⣿⡨⠀⠀⠀⠀⠀⠀⠀⠋⠀⠀⠀⠀⠀⠈⣿⣿⠋⠛⣿⠋⠀⠀
+⠀⠀⠐⢄⡐⠈⢁⠘⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠀⠔⠿⠋⠀⢀⠇⠀⠀⠀
+⠀⠀⠀⠀⠈⠉⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⢀⠀⠀⢀⡰⠃⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠑⠀⠀⠀⠀
+
+⠀⠀
+      ![Bomb](https://media1.tenor.com/m/iAnI0R6EeIkAAAAd/dedsec-boom.gif)
