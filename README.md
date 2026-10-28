@@ -37,6 +37,15 @@ Funciona en cualquier terminal de **80×24 o más**. Si los recuadros se ven mal
 menú o iniciar con `dotnet run -- --ascii`. Si cambias de versión de .NET y aparecen errores, borra las carpetas
 generadas con `rm -rf bin obj`.
 
+
+## Diagrama de Flujo
+<img width="1459" height="563" alt="Screenshot_20261027_203723" src="https://github.com/user-attachments/assets/83214634-5b85-4ec2-aacd-a519f54ec6cd" />
+## Diagrama de Clases
+<img width="690" height="739" alt="Screenshot_20261027_204008" src="https://github.com/user-attachments/assets/50e79626-d79c-4ac7-aa00-f6b77bf691a9" />
+<img width="1072" height="903" alt="Screenshot_20261027_203945" src="https://github.com/user-attachments/assets/22d528e0-10b4-4548-bf30-aa960b9390d8" />
+
+
+
 ## Estructuras de datos
 
 | Estructura | Archivo | Qué resuelve en el problema | Responsable |
@@ -219,3 +228,8 @@ n = elementos, V = vértices, E = aristas, k = largo del texto, p = largo del pr
   lista enlazada con referencia a la cola: insertar al final cuesta O(1). El registro de subestaciones por vértice
   es en cambio un arreglo, porque se consulta por índice en cada ruta y una lista enlazada costaría O(n) por consulta.
 - El recorrido DFS es iterativo, con una pila basada en arreglos, para que una red grande no desborde la pila de llamadas.
+
+
+## No one is off the grid
+
+![Reaper](https://tenor.com/view/dedsec-boom-gif-9802586864434313353)
