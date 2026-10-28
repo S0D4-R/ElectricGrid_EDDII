@@ -40,6 +40,8 @@ generadas con `rm -rf bin obj`.
 
 ## Diagrama de Flujo
 <img width="1459" height="563" alt="Screenshot_20261027_203723" src="https://github.com/user-attachments/assets/83214634-5b85-4ec2-aacd-a519f54ec6cd" />
+
+
 ## Diagrama de Clases
 <img width="690" height="739" alt="Screenshot_20261027_204008" src="https://github.com/user-attachments/assets/50e79626-d79c-4ac7-aa00-f6b77bf691a9" />
 <img width="1072" height="903" alt="Screenshot_20261027_203945" src="https://github.com/user-attachments/assets/22d528e0-10b4-4548-bf30-aa960b9390d8" />
@@ -232,4 +234,4 @@ n = elementos, V = vértices, E = aristas, k = largo del texto, p = largo del pr
 
 ## No one is off the grid
 
-![Reaper](https://tenor.com/view/dedsec-boom-gif-9802586864434313353)
+![Bomb](https://media1.tenor.com/m/iAnI0R6EeIkAAAAd/dedsec-boom.gif)
