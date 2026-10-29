@@ -6,28 +6,19 @@ using ElectricGrid.Models;
 
 namespace ElectricGrid.Services
 {
-    /// <summary>
-    /// Fachada que coordina las estructuras de datos en un mismo flujo: el Trie sugiere nombres, la tabla hash
-    /// localiza el registro, Union-Find valida la conectividad y el grafo calcula rutas y recorridos.
-    /// No contiene código de interfaz de usuario.
-    /// </summary>
-    /// <remarks>
-    /// Capa de integración desarrollada por todo el equipo. El índice de vértice del grafo, el elemento de
-    /// Union-Find y la posición en el arreglo de subestaciones son siempre el mismo número.
-    /// </remarks>
+    // Coordina la tabla hash, el grafo, Union-Find y el Trie.
     public sealed class PowerGridService : IPowerGridService, IStructureInspector
     {
         private const int DefaultSuggestionLimit = 10;
 
         private HashTable<Substation> _registry = new HashTable<Substation>();
-        
+
         private Graph _graph = new Graph();
         private DisjointSet _zones = new DisjointSet();
-        // TODO [TRIE]: descomentar al implementar Trie.cs.
         private Trie _nameIndex = new Trie();
         private ArrayBuffer<Substation?> _substationByVertex = new ArrayBuffer<Substation?>();
 
-        /// <inheritdoc />
+        // Valida los datos y registra la subestación en las cuatro estructuras.
         public OperationResult RegisterSubstation(string code, string name, double capacityMw)
         {
             string normalizedCode = NormalizeCode(code);
@@ -68,7 +59,7 @@ namespace ElectricGrid.Services
             return OperationResult.Ok($"Subestación '{normalizedCode}' ({cleanName}) registrada.");
         }
 
-        /// <inheritdoc />
+        // Elimina la subestación, sus líneas y reconstruye las zonas.
         public OperationResult RemoveSubstation(string code)
         {
             Substation? substation = FindSubstation(code);
@@ -86,7 +77,7 @@ namespace ElectricGrid.Services
             return OperationResult.Ok($"Subestación '{substation.Code}' y sus líneas fueron eliminadas.");
         }
 
-        /// <inheritdoc />
+        // Busca por código normalizado en la tabla hash.
         public Substation? FindSubstation(string code)
         {
             string normalized = NormalizeCode(code);
@@ -98,7 +89,7 @@ namespace ElectricGrid.Services
             return _registry.TryGetValue(normalized, out Substation substation) ? substation : null;
         }
 
-        /// <inheritdoc />
+        // Usa el Trie para devolver subestaciones cuyo nombre empieza con el prefijo.
         public Substation[] SuggestSubstations(string prefix, int maxResults)
         {
             int limit = maxResults <= 0 ? DefaultSuggestionLimit : maxResults;
@@ -114,24 +105,22 @@ namespace ElectricGrid.Services
             return suggestions.ToArray();
         }
 
-        /// <inheritdoc />
+        // Busca por prefijo si el Trie está activo; si no, recorre la lista.
         public Substation[] SearchSubstations(string text, int maxResults)
         {
             int limit = maxResults <= 0 ? DefaultSuggestionLimit : maxResults;
 
             if (SupportsAutocomplete)
             {
-                // TODO [TRIE]: bloque de búsqueda por prefijo; se activa cuando SupportsAutocomplete sea true.
                 return SuggestSubstations(text, limit);
             }
 
             return LinearSearch(text, limit);
         }
 
-        /// <inheritdoc />
-        public bool SupportsAutocomplete => true; 
+        public bool SupportsAutocomplete => true;
 
-        /// <inheritdoc />
+        // Devuelve las subestaciones en el orden en que se registraron.
         public Substation[] GetAllSubstations()
         {
             ArrayBuffer<Substation> result = new ArrayBuffer<Substation>(_registry.Count + 1);
@@ -147,7 +136,7 @@ namespace ElectricGrid.Services
             return result.ToArray();
         }
 
-        /// <inheritdoc />
+        // Crea la línea en el grafo y une las zonas de sus extremos.
         public OperationResult RegisterLine(PowerLine line)
         {
             Substation? source = FindSubstation(line.SourceCode);
@@ -186,7 +175,7 @@ namespace ElectricGrid.Services
             return OperationResult.Ok($"Línea {source.Code} {direction} {target.Code} registrada.");
         }
 
-        /// <inheritdoc />
+        // Quita la línea del grafo y recalcula las zonas.
         public OperationResult RemoveLine(string sourceCode, string targetCode, bool bidirectional)
         {
             Substation? source = FindSubstation(sourceCode);
@@ -206,7 +195,7 @@ namespace ElectricGrid.Services
             return OperationResult.Ok($"Línea entre {source.Code} y {target.Code} eliminada.");
         }
 
-        /// <inheritdoc />
+        // Recorre las aristas y devuelve cada línea una sola vez.
         public PowerLine[] GetAllLines()
         {
             ArrayBuffer<PowerLine> lines = new ArrayBuffer<PowerLine>();
@@ -232,7 +221,7 @@ namespace ElectricGrid.Services
             return lines.ToArray();
         }
 
-        /// <inheritdoc />
+        // Consulta Union-Find para saber si la línea uniría zonas o sería redundante.
         public LineProposalResult EvaluateProposedLine(string sourceCode, string targetCode)
         {
             Substation? source = FindSubstation(sourceCode);
@@ -269,24 +258,19 @@ namespace ElectricGrid.Services
                 directExists);
         }
 
-        
-
-        /// <inheritdoc />
+        // Comprueba los códigos, arma un grafo con las líneas y ejecuta Dijkstra.
         public RouteResult FindOptimalRoute(string startCode, string endCode, EdgeWeightKind criterion)
         {
-            // 1. Validar que ambas subestaciones existan usando TryGetValue de la tabla hash
             if (!_registry.TryGetValue(startCode, out _))
             {
                 return new RouteResult(RouteStatus.SourceNotFound, $"La subestación de origen '{startCode}' no existe.", Array.Empty<Substation>(), 0, 0, 0, criterion);
             }
-            
+
             if (!_registry.TryGetValue(endCode, out _))
             {
                 return new RouteResult(RouteStatus.TargetNotFound, $"La subestación de destino '{endCode}' no existe.", Array.Empty<Substation>(), 0, 0, 0, criterion);
             }
 
-            // 2. Instanciar y poblar el grafo de Dijkstra
-            // (Usamos GetAllSubstations().Length si _registry.Count no está disponible en tu HashTable)
             Substation[] allSubstations = GetAllSubstations();
             DijkstraGraph graph = new DijkstraGraph(allSubstations.Length);
             PowerLine[] allLines = GetAllLines();
@@ -295,7 +279,7 @@ namespace ElectricGrid.Services
             {
                 PowerLine line = allLines[i];
                 double weight = criterion == EdgeWeightKind.Length ? line.LengthKm : line.MaintenanceCost;
-                
+
                 graph.AddEdge(line.SourceCode, line.TargetCode, weight);
                 if (line.IsBidirectional)
                 {
@@ -303,16 +287,13 @@ namespace ElectricGrid.Services
                 }
             }
 
-            // 3. Ejecutar el algoritmo
             ShortestPathResult shortestPath = graph.FindShortestPath(startCode, endCode);
 
-            // 4. Evaluar el resultado
             if (!shortestPath.IsReachable)
             {
                 return new RouteResult(RouteStatus.NoDirectedPath, $"No existe una ruta posible entre {startCode} y {endCode}.", Array.Empty<Substation>(), 0, 0, 0, criterion);
             }
 
-            // 5. Reconstruir los objetos Substation y calcular totales
             Substation[] pathSubstations = new Substation[shortestPath.Path.Length];
             double totalLength = 0;
             double totalCost = 0;
@@ -320,16 +301,14 @@ namespace ElectricGrid.Services
             for (int i = 0; i < shortestPath.Path.Length; i++)
             {
                 string nodeCode = shortestPath.Path[i];
-                
-                // Extraer la subestación
+
                 _registry.TryGetValue(nodeCode, out Substation sub);
                 pathSubstations[i] = sub;
 
-                // Sumar costos y longitudes (excepto en el nodo inicial)
                 if (i > 0)
                 {
                     string prevCode = shortestPath.Path[i - 1];
-                    
+
                     for (int j = 0; j < allLines.Length; j++)
                     {
                         PowerLine line = allLines[j];
@@ -344,11 +323,10 @@ namespace ElectricGrid.Services
                 }
             }
 
-            // 6. Retornar éxito con todos los parámetros que exige tu constructor
             return new RouteResult(RouteStatus.Found, "Ruta óptima calculada exitosamente.", pathSubstations, shortestPath.TotalDistance, totalLength, totalCost, criterion);
         }
 
-        /// <inheritdoc />
+        // Recorre la red en anchura desde la subestación indicada.
         public TraversalResult TraverseBreadthFirst(string startCode)
         {
             Substation? start = FindSubstation(startCode);
@@ -360,7 +338,7 @@ namespace ElectricGrid.Services
             return new TraversalResult(true, "Recorrido BFS completado.", MapVertices(_graph.BreadthFirstTraversal(start.VertexIndex)));
         }
 
-        /// <inheritdoc />
+        // Recorre la red en profundidad desde la subestación indicada.
         public TraversalResult TraverseDepthFirst(string startCode)
         {
             Substation? start = FindSubstation(startCode);
@@ -372,7 +350,7 @@ namespace ElectricGrid.Services
             return new TraversalResult(true, "Recorrido DFS completado.", MapVertices(_graph.DepthFirstTraversal(start.VertexIndex)));
         }
 
-        /// <inheritdoc />
+        // Compara las raíces de Union-Find de ambas subestaciones.
         public ConnectivityResult CheckSameZone(string codeA, string codeB)
         {
             Substation? a = FindSubstation(codeA);
@@ -391,7 +369,7 @@ namespace ElectricGrid.Services
             return new ConnectivityResult(true, connected, message);
         }
 
-        /// <inheritdoc />
+        // Agrupa los vértices activos según su raíz de Union-Find.
         public ElectricalZone[] GetZones()
         {
             int slots = _graph.VertexSlotCount;
@@ -447,7 +425,7 @@ namespace ElectricGrid.Services
             return result;
         }
 
-        /// <inheritdoc />
+        // Suma capacidades, longitudes y costos para el resumen.
         public GridSummary GetSummary()
         {
             double capacity = 0;
@@ -469,26 +447,25 @@ namespace ElectricGrid.Services
             return new GridSummary(substations.Length, lines.Length, GetZones().Length, capacity, length, cost);
         }
 
-        /// <inheritdoc />
+        // Reemplaza todas las estructuras por unas vacías.
         public void Clear()
         {
             _registry = new HashTable<Substation>();
             _graph = new Graph();
             _zones = new DisjointSet();
-            // TODO [TRIE]: _nameIndex = new Trie();
             _substationByVertex = new ArrayBuffer<Substation?>();
         }
 
-        /// <inheritdoc />
+        // Texto con las cubetas y colisiones de la tabla hash.
         public string DescribeHashTable() => _registry.Describe();
 
-        /// <inheritdoc />
+        // Texto con las listas de adyacencia del grafo.
         public string DescribeGraph() => _graph.Describe(LabelOf);
 
-        /// <inheritdoc />
-        public string DescribeTrie() => _nameIndex.ObtenerEstructuraVisual(); // TODO [TRIE]: devolver _nameIndex.Describe().
+        // Texto con la estructura del Trie.
+        public string DescribeTrie() => _nameIndex.ObtenerEstructuraVisual();
 
-        /// <inheritdoc />
+        // Texto con el padre y el rango de cada vértice.
         public string DescribeDisjointSets()
         {
             StringBuilder builder = new StringBuilder();
@@ -509,7 +486,7 @@ namespace ElectricGrid.Services
             return builder.ToString();
         }
 
-        /// <summary>Búsqueda lineal por coincidencia parcial, sin distinguir mayúsculas ni tildes.</summary>
+        // Recorre las subestaciones buscando el texto en el nombre o el código.
         private Substation[] LinearSearch(string text, int limit)
         {
             string pattern = Fold(text.Trim());
@@ -537,7 +514,7 @@ namespace ElectricGrid.Services
             return found.ToArray();
         }
 
-        /// <summary>Convierte el texto a minúsculas y sin tildes para comparar.</summary>
+        // Pasa el texto a minúsculas y quita tildes para comparar.
         private static string Fold(string text)
         {
             StringBuilder builder = new StringBuilder(text.Length);
@@ -549,6 +526,7 @@ namespace ElectricGrid.Services
             return builder.ToString();
         }
 
+        // Equivalencia sin tilde de una letra.
         private static char FoldChar(char c)
         {
             switch (char.ToLowerInvariant(c))
@@ -563,12 +541,14 @@ namespace ElectricGrid.Services
             }
         }
 
+        // Vuelve a formar las zonas con las líneas que quedan.
         private void RebuildZones()
         {
             _zones.ResetToSingletons();
             _graph.ForEachEdge((from, edge) => _zones.Union(from, edge.Target));
         }
 
+        // Convierte índices de vértice en subestaciones.
         private Substation[] MapVertices(int[] vertices)
         {
             Substation[] result = new Substation[vertices.Length];
@@ -580,15 +560,18 @@ namespace ElectricGrid.Services
             return result;
         }
 
+        // Etiqueta legible para mostrar en las estructuras.
         private string LabelOf(int vertex)
         {
             Substation? substation = _substationByVertex[vertex];
             return substation == null ? $"#{vertex}" : $"{substation.Code} ({substation.Name})";
         }
 
+        // Crea un resultado de ruta fallido.
         private static RouteResult Failed(RouteStatus status, string message, EdgeWeightKind criterion)
             => new RouteResult(status, message, new Substation[0], 0, 0, 0, criterion);
 
+        // Deja el código en mayúsculas y sin espacios externos.
         private static string NormalizeCode(string? code)
             => string.IsNullOrWhiteSpace(code) ? string.Empty : code.Trim().ToUpperInvariant();
     }

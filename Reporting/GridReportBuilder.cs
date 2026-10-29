@@ -6,10 +6,10 @@ using ElectricGrid.Services;
 
 namespace ElectricGrid.Reporting
 {
-    /// <summary>Genera un reporte de texto con el resumen, las zonas, las subestaciones y las líneas de la red.</summary>
+    // Genera el reporte de texto con el resumen de la red.
     public static class GridReportBuilder
     {
-        /// <summary>Construye el texto del reporte.</summary>
+        // Arma el reporte con el resumen, las zonas, las subestaciones y las líneas.
         public static string Build(IPowerGridService service)
         {
             StringBuilder report = new StringBuilder();
@@ -49,7 +49,7 @@ namespace ElectricGrid.Reporting
             return report.ToString();
         }
 
-        /// <summary>Construye el reporte y lo escribe en un archivo; devuelve la ruta completa del archivo.</summary>
+        // Guarda el reporte en disco y devuelve la ruta completa.
         public static string Export(IPowerGridService service, string path)
         {
             string fullPath = Path.GetFullPath(path);

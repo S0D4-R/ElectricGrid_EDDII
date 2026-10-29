@@ -7,19 +7,16 @@ using ElectricGrid.Collections;
 
 namespace ElectricGrid.DataStructures
 {
-    /// <summary>Atributo de la arista que minimiza el cálculo de ruta mínima.</summary>
     public enum EdgeWeightKind
     {
-        /// <summary>Costo de mantenimiento acumulado.</summary>
         MaintenanceCost,
 
-        /// <summary>Longitud acumulada en kilómetros.</summary>
         Length
     }
 
-    /// <summary>Arista saliente almacenada en una lista de adyacencia enlazada.</summary>
     public sealed class GraphEdge
     {
+        // Guarda el destino, la longitud y el costo de la arista.
         internal GraphEdge(int target, double length, double cost)
         {
             Target = target;
@@ -27,23 +24,21 @@ namespace ElectricGrid.DataStructures
             Cost = cost;
         }
 
-        /// <summary>Índice del vértice destino.</summary>
         public int Target { get; }
 
-        /// <summary>Longitud de la línea en kilómetros.</summary>
         public double Length { get; }
 
-        /// <summary>Costo de mantenimiento de la línea.</summary>
         public double Cost { get; }
 
         internal GraphEdge? Next { get; set; }
 
+        // Devuelve el atributo que se va a minimizar.
         internal double WeightFor(EdgeWeightKind kind) => kind == EdgeWeightKind.Length ? Length : Cost;
     }
 
-    /// <summary>Resultado de un cálculo de ruta mínima sobre el grafo.</summary>
     public sealed class PathResult
     {
+        // Guarda el camino y los totales calculados.
         private PathResult(bool found, int[] vertices, double weight, double length, double cost)
         {
             Found = found;
@@ -53,33 +48,25 @@ namespace ElectricGrid.DataStructures
             TotalCost = cost;
         }
 
-        /// <summary>Indica si existe un camino.</summary>
         public bool Found { get; }
 
-        /// <summary>Índices de los vértices desde el origen hasta el destino.</summary>
         public int[] Vertices { get; }
 
-        /// <summary>Valor acumulado de la métrica minimizada.</summary>
         public double TotalWeight { get; }
 
-        /// <summary>Longitud total del camino en kilómetros.</summary>
         public double TotalLength { get; }
 
-        /// <summary>Costo total de mantenimiento del camino.</summary>
         public double TotalCost { get; }
 
+        // Resultado para una ruta que no existe.
         internal static PathResult NotFound() => new PathResult(false, new int[0], 0, 0, 0);
 
+        // Resultado para una ruta encontrada.
         internal static PathResult Success(int[] vertices, double weight, double length, double cost)
             => new PathResult(true, vertices, weight, length, cost);
     }
 
-    /// <summary>
-    /// Grafo dirigido y ponderado con listas de adyacencia enlazadas.
-    /// Los vértices son subestaciones y las aristas son líneas; una línea de doble sentido se guarda como dos aristas opuestas.
-    /// Incluye los recorridos BFS y DFS, y el espacio para el algoritmo de Dijkstra.
-    /// </summary>
-    /// <remarks>Responsable: Integrante B (Grafo).</remarks>
+    // Grafo dirigido con listas de adyacencia enlazadas.
     public sealed class Graph
     {
         private GraphEdge?[] _adjacency;
@@ -88,7 +75,7 @@ namespace ElectricGrid.DataStructures
         private int _activeVertexCount;
         private int _edgeCount;
 
-        /// <summary>Crea un grafo vacío con la capacidad inicial indicada.</summary>
+        // Reserva la capacidad inicial del grafo.
         public Graph(int initialCapacity = 16)
         {
             int capacity = initialCapacity < 1 ? 1 : initialCapacity;
@@ -96,16 +83,13 @@ namespace ElectricGrid.DataStructures
             _active = new bool[capacity];
         }
 
-        /// <summary>Cantidad de posiciones de vértice creadas, incluidas las eliminadas.</summary>
         public int VertexSlotCount => _slotCount;
 
-        /// <summary>Cantidad de vértices que no han sido eliminados.</summary>
         public int ActiveVertexCount => _activeVertexCount;
 
-        /// <summary>Cantidad de aristas dirigidas.</summary>
         public int EdgeCount => _edgeCount;
 
-        /// <summary>Agrega un vértice y devuelve su índice.</summary>
+        // Agrega un vértice y devuelve su índice.
         public int AddVertex()
         {
             if (_slotCount == _adjacency.Length)
@@ -121,10 +105,10 @@ namespace ElectricGrid.DataStructures
             return index;
         }
 
-        /// <summary>Indica si el índice corresponde a un vértice existente.</summary>
+        // Indica si el índice corresponde a un vértice activo.
         public bool IsActive(int vertex) => vertex >= 0 && vertex < _slotCount && _active[vertex];
 
-        /// <summary>Elimina un vértice junto con todas sus aristas entrantes y salientes.</summary>
+        // Elimina el vértice y todas sus aristas entrantes y salientes.
         public void RemoveVertex(int vertex)
         {
             if (!IsActive(vertex))
@@ -151,10 +135,7 @@ namespace ElectricGrid.DataStructures
             _activeVertexCount--;
         }
 
-        /// <summary>
-        /// Agrega una línea entre dos vértices; si es bidireccional agrega también la arista opuesta.
-        /// Devuelve falso si la arista ya existe, algún vértice es inválido o los pesos son negativos.
-        /// </summary>
+        // Agrega una arista y también la opuesta si es bidireccional.
         public bool AddEdge(int from, int to, double length, double cost, bool bidirectional)
         {
             if (!IsActive(from) || !IsActive(to) || from == to)
@@ -184,7 +165,7 @@ namespace ElectricGrid.DataStructures
             return true;
         }
 
-        /// <summary>Elimina una línea y, si se indica, también su arista opuesta; devuelve verdadero si se eliminó alguna.</summary>
+        // Quita la arista indicada y, si aplica, la de vuelta.
         public bool RemoveEdge(int from, int to, bool bidirectional)
         {
             bool removed = RemoveDirectedEdge(from, to);
@@ -196,7 +177,7 @@ namespace ElectricGrid.DataStructures
             return removed;
         }
 
-        /// <summary>Busca la arista dirigida de un vértice a otro; devuelve nulo si no existe.</summary>
+        // Busca una arista dirigida entre dos vértices.
         public GraphEdge? FindEdge(int from, int to)
         {
             if (!IsActive(from))
@@ -215,7 +196,7 @@ namespace ElectricGrid.DataStructures
             return null;
         }
 
-        /// <summary>Recorre todas las aristas dirigidas informando su vértice origen.</summary>
+        // Recorre todas las aristas e informa el vértice de origen.
         public void ForEachEdge(Action<int, GraphEdge> visitor)
         {
             for (int vertex = 0; vertex < _slotCount; vertex++)
@@ -232,10 +213,7 @@ namespace ElectricGrid.DataStructures
             }
         }
 
-        /// <summary>
-        /// Recorrido en anchura desde un vértice, respetando el sentido de las aristas.
-        /// Queue&lt;T&gt; se usa únicamente como estructura de control del orden de visita.
-        /// </summary>
+        // Recorre el grafo en anchura desde el vértice indicado.
         public int[] BreadthFirstTraversal(int start)
         {
             RequireActive(start);
@@ -265,7 +243,7 @@ namespace ElectricGrid.DataStructures
             return order.ToArray();
         }
 
-        /// <summary>Recorrido en profundidad iterativo desde un vértice, con una pila propia basada en arreglos.</summary>
+        // Recorre el grafo en profundidad sin recursión.
         public int[] DepthFirstTraversal(int start)
         {
             RequireActive(start);
@@ -308,17 +286,16 @@ namespace ElectricGrid.DataStructures
             return order.ToArray();
         }
 
-        /// <summary>Calcula la ruta mínima entre dos vértices con el algoritmo de Dijkstra (pendiente de implementar).</summary>
+        // Ruta mínima entre dos vértices; todavía no está implementada aquí.
         public PathResult ShortestPath(int source, int target, EdgeWeightKind weightKind)
         {
             RequireActive(source);
             RequireActive(target);
 
-            // TODO [DIJKSTRA]: implementar el algoritmo con una cola de prioridad propia y retirar la excepción.
             throw new NotImplementedException("El algoritmo de Dijkstra está pendiente de implementación (Graph.ShortestPath).");
         }
 
-        /// <summary>Genera una descripción imprimible de las listas de adyacencia.</summary>
+        // Genera el texto de las listas de adyacencia.
         public string Describe(Func<int, string> labelOf)
         {
             StringBuilder builder = new StringBuilder();
@@ -354,6 +331,7 @@ namespace ElectricGrid.DataStructures
             return builder.ToString();
         }
 
+        // Reconstruye el camino y suma longitud y costo.
         private PathResult BuildPath(int source, int target, int[] previous, double totalWeight)
         {
             int length = 1;
@@ -388,6 +366,7 @@ namespace ElectricGrid.DataStructures
             return PathResult.Success(path, totalWeight, totalLength, totalCost);
         }
 
+        // Agrega la arista al final de la lista del vértice.
         private void AppendEdge(int from, GraphEdge edge)
         {
             GraphEdge? tail = _adjacency[from];
@@ -405,6 +384,7 @@ namespace ElectricGrid.DataStructures
             tail.Next = edge;
         }
 
+        // Quita una arista dirigida concreta.
         private bool RemoveDirectedEdge(int from, int to)
         {
             if (!IsActive(from))
@@ -436,6 +416,7 @@ namespace ElectricGrid.DataStructures
             return false;
         }
 
+        // Lanza un error si el vértice no existe o fue eliminado.
         private void RequireActive(int vertex)
         {
             if (!IsActive(vertex))

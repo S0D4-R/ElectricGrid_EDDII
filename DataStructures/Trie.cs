@@ -5,23 +5,18 @@ using System.Text;
 
 namespace ElectricGrid.DataStructures
 {
-    /// <summary>Sugerencia devuelta por una búsqueda por prefijo: texto original y código asociado.</summary>
+    // Coincidencia del Trie: texto guardado y valor asociado.
     public readonly struct TrieMatch(string text, string payload)
     {
-        /// <summary>Texto insertado (nombre de la subestación).</summary>
         public string Text { get; } = text ?? string.Empty;
 
-        /// <summary>Valor asociado al texto (código de la subestación).</summary>
         public string Payload { get; } = payload ?? string.Empty;
     }
 
-    /// <summary>
-    /// Árbol de prefijos para sugerir nombres de subestación mientras se escribe.
-    /// Implementado desde cero manejando memoria con arreglos primitivos.
-    /// </summary>
+    // Árbol de prefijos para sugerir nombres de subestación.
     public sealed class Trie
     {
-        // Estructura Interna del Nodo
+        // Nodo del Trie con sus hijos y los valores del texto que termina aquí.
         private sealed class Node(char key)
         {
             public char Key { get; } = key;
@@ -31,6 +26,7 @@ namespace ElectricGrid.DataStructures
             public string[]? Payloads { get; set; }
             public int PayloadCount { get; set; }
 
+            // Devuelve la posición del hijo con esa letra, o -1.
             public int GetChildIndex(char c)
             {
                 if (Children is not null)
@@ -43,6 +39,7 @@ namespace ElectricGrid.DataStructures
                 return -1;
             }
 
+            // Agrega un hijo y devuelve el nodo creado.
             public Node AddChild(char c)
             {
                 if (Children is null) Children = new Node[2];
@@ -58,6 +55,7 @@ namespace ElectricGrid.DataStructures
                 return n;
             }
 
+            // Quita un hijo y desplaza los siguientes.
             public void RemoveChildAt(int index)
             {
                 if (Children is null) return;
@@ -70,13 +68,14 @@ namespace ElectricGrid.DataStructures
                 ChildCount--;
             }
 
+            // Agrega un valor si no estaba repetido.
             public bool AddPayload(string payload)
             {
                 if (Payloads is not null)
                 {
                     for (int i = 0; i < PayloadCount; i++)
                     {
-                        if (string.Equals(Payloads[i], payload, StringComparison.Ordinal)) return false; // Ya existe
+                        if (string.Equals(Payloads[i], payload, StringComparison.Ordinal)) return false;
                     }
                 }
 
@@ -92,6 +91,7 @@ namespace ElectricGrid.DataStructures
                 return true;
             }
 
+            // Quita un valor concreto del nodo.
             public bool RemovePayload(string payload)
             {
                 if (Payloads is not null)
@@ -114,18 +114,15 @@ namespace ElectricGrid.DataStructures
             }
         }
 
-        // Estado del Trie
         private readonly Node _root = new('\0');
         private int _count = 0;
-        private int _nodeCount = 1; // La raíz cuenta como 1
+        private int _nodeCount = 1;
 
-        /// <summary>Cantidad de entradas almacenadas.</summary>
         public int Count => _count;
 
-        /// <summary>Cantidad de nodos del árbol, incluida la raíz.</summary>
         public int NodeCount => _nodeCount;
 
-        /// <summary>Inserta un par (texto, valor); devuelve falso si el par ya existe.</summary>
+        // Crea el camino del texto y guarda el valor al final.
         public bool Insert(string? text, string? payload)
         {
             text ??= string.Empty;
@@ -155,7 +152,7 @@ namespace ElectricGrid.DataStructures
             return false;
         }
 
-        /// <summary>Indica si el texto está almacenado con cualquier valor.</summary>
+        // Indica si el texto tiene al menos un valor guardado.
         public bool Contains(string? text)
         {
             text ??= string.Empty;
@@ -176,7 +173,7 @@ namespace ElectricGrid.DataStructures
             return current.PayloadCount > 0;
         }
 
-        /// <summary>Elimina un par (texto, valor) y poda las ramas vacías; devuelve falso si no existía.</summary>
+        // Elimina un valor y poda las ramas que quedan vacías.
         public bool Remove(string? text, string? payload)
         {
             text ??= string.Empty;
@@ -190,6 +187,7 @@ namespace ElectricGrid.DataStructures
             return removed;
         }
 
+        // Baja hasta el nodo del texto y elimina el valor.
         private bool RemoveRecursive(Node current, string text, int index, string payload)
         {
             if (index == text.Length)
@@ -206,7 +204,6 @@ namespace ElectricGrid.DataStructures
 
             if (removed)
             {
-                // Podar (Pruning): Si el hijo quedó vacío, lo quitamos para ahorrar memoria
                 if (child.ChildCount == 0 && child.PayloadCount == 0)
                 {
                     current.RemoveChildAt(childIndex);
@@ -216,7 +213,7 @@ namespace ElectricGrid.DataStructures
             return removed;
         }
 
-        /// <summary>Devuelve coincidencias cuyo texto comienza con el prefijo.</summary>
+        // Devuelve hasta maxResults coincidencias que empiecen por el prefijo.
         public TrieMatch[] SearchByPrefix(string? prefix, int maxResults)
         {
             prefix ??= string.Empty;
@@ -232,19 +229,16 @@ namespace ElectricGrid.DataStructures
                 }
                 else
                 {
-                    return Array.Empty<TrieMatch>(); // El prefijo no existe
+                    return Array.Empty<TrieMatch>();
                 }
             }
 
-            // Para no reservar demasiada memoria en vano, el límite del buffer
-            // será el menor valor entre maxResults y el total de datos en el Trie.
             int arraySize = Math.Min(maxResults, _count);
             TrieMatch[] buffer = new TrieMatch[arraySize];
             int found = 0;
 
             Dfs(current, prefix, buffer, ref found, maxResults);
 
-            // Si los encontrados son menos que el tamaño del arreglo, lo truncamos.
             if (found != buffer.Length)
             {
                 TrieMatch[] result = new TrieMatch[found];
@@ -255,7 +249,7 @@ namespace ElectricGrid.DataStructures
             return buffer;
         }
 
-        /// <summary>Versión práctica para la interfaz: devuelve hasta maxResults sugerencias usando solo el texto.</summary>
+        // Devuelve solo los textos de las coincidencias.
         public string[] GetSuggestions(string? prefix, int maxResults = 10)
         {
             if (string.IsNullOrEmpty(prefix)) return Array.Empty<string>();
@@ -269,13 +263,13 @@ namespace ElectricGrid.DataStructures
             return suggestions;
         }
 
-        /// <summary>Devuelve sugerencias con texto y código asociado; útil para mostrar la lista de resultados con payload.</summary>
+        // Atajo de SearchByPrefix con un límite de 10.
         public TrieMatch[] SearchByPrefix(string? prefix)
         {
             return SearchByPrefix(prefix, 10);
         }
 
-        /// <summary>Recorre todo el árbol y devuelve todas las entradas.</summary>
+        // Devuelve todas las entradas guardadas en el árbol.
         public TrieMatch[] GetAll()
         {
             TrieMatch[] buffer = new TrieMatch[_count];
@@ -284,19 +278,17 @@ namespace ElectricGrid.DataStructures
             return buffer;
         }
 
-        /// <summary>Búsqueda en profundidad (DFS) para encontrar sufijos y valores asociados.</summary>
+        // Recoge los valores del nodo y sigue por sus hijos.
         private static void Dfs(Node node, string currentText, TrieMatch[] buffer, ref int found, int maxResults)
         {
             if (found >= maxResults) return;
 
-            // Extraer las cargas (payloads) del nodo actual
             for (int i = 0; i < node.PayloadCount; i++)
             {
                 if (found >= maxResults) return;
                 buffer[found++] = new TrieMatch(currentText, node.Payloads![i]);
             }
 
-            // Continuar bajando por los hijos
             for (int i = 0; i < node.ChildCount; i++)
             {
                 if (found >= maxResults) return;
@@ -304,47 +296,43 @@ namespace ElectricGrid.DataStructures
             }
         }
 
-        /// <summary>Genera una descripción imprimible del contenido y tamaño del árbol.</summary>
+        // Resume cuántos registros y nodos tiene el Trie.
         public string Describe()
         {
             return $"Trie en memoria: {_count} registros vinculados en {_nodeCount} nodos totales.";
         }
 
+        // Dibuja el árbol en texto, una rama por línea.
         public string ObtenerEstructuraVisual()
         {
             StringBuilder sb = new StringBuilder();
-            
-            // Encabezado exacto al de tu imagen
+
             sb.AppendLine("(raíz) [*] = fin de palabra");
-            
-            // Iteramos sobre los hijos de la raíz para no dibujar el nodo raíz ('\0')
+
             for (int i = 0; i < _root.ChildCount; i++)
             {
                 GenerarRama(_root.Children![i], sb, "");
             }
-            
+
             return sb.ToString();
         }
 
+        // Escribe un nodo y se llama para cada hijo.
         private void GenerarRama(Node nodo, StringBuilder sb, string sangria)
         {
             if (nodo == null) return;
 
-            // 1. Aplicar la sangría
             sb.Append(sangria);
-            
-            // 2. Dibujar la rama y la letra
-            sb.Append("  └─ "); 
+
+            sb.Append("  └─ ");
             sb.Append(nodo.Key);
-            
-            // 3. Verificar si es fin de palabra (en tu caso, si tiene Payloads)
-            if (nodo.PayloadCount > 0) 
+
+            if (nodo.PayloadCount > 0)
             {
                 sb.Append(" [*]");
             }
             sb.AppendLine();
 
-            // 4. Llamada recursiva para los hijos, aumentando la sangría (4 espacios)
             for (int i = 0; i < nodo.ChildCount; i++)
             {
                 GenerarRama(nodo.Children![i], sb, sangria + "    ");

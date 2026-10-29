@@ -1,9 +1,9 @@
 namespace ElectricGrid.Collections
 {
-    /// <summary>Operaciones auxiliares sobre arreglos implementadas con ciclos propios, sin usar la clase Array de .NET.</summary>
+    // Utilidades para redimensionar y limpiar arreglos sin usar Array.
     public static class ArrayUtils
     {
-        /// <summary>Reemplaza el arreglo por uno nuevo del tamaño indicado, conservando los elementos que caben.</summary>
+        // Crea un arreglo nuevo y copia los elementos que caben.
         public static void Resize<T>(ref T[] array, int newSize)
         {
             T[] resized = new T[newSize];
@@ -17,7 +17,7 @@ namespace ElectricGrid.Collections
             array = resized;
         }
 
-        /// <summary>Restablece todas las posiciones del arreglo a su valor por defecto.</summary>
+        // Devuelve cada posición a su valor por defecto.
         public static void Clear<T>(T[] array)
         {
             for (int i = 0; i < array.Length; i++)

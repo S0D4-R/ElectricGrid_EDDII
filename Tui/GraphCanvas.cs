@@ -2,10 +2,7 @@ using System;
 
 namespace ElectricGrid.Tui
 {
-    /// <summary>
-    /// Pinta un grafo ya distribuido en el búfer de pantalla. Las aristas se trazan con el algoritmo de Bresenham,
-    /// las de un solo sentido llevan una flecha junto al destino y los nodos se colorean por zona eléctrica.
-    /// </summary>
+    // Dibuja el grafo sobre el búfer de pantalla.
     internal static class GraphCanvas
     {
         private static readonly ConsoleColor[] ZonePalette =
@@ -14,10 +11,10 @@ namespace ElectricGrid.Tui
             ConsoleColor.Red, ConsoleColor.Blue, ConsoleColor.DarkYellow
         };
 
-        /// <summary>Devuelve el color asignado a una zona.</summary>
+        // Devuelve el color que corresponde a la zona.
         public static ConsoleColor ZoneColor(int zone) => ZonePalette[zone % ZonePalette.Length];
 
-        /// <summary>Dibuja aristas y nodos; resalta la secuencia indicada y, si es un camino, también sus aristas.</summary>
+        // Dibuja aristas, nodos y el resaltado actual.
         public static void Draw(ScreenBuffer buffer, Glyphs glyphs, int ox, int oy, GraphSnapshot graph,
                                 int[] nodeX, int[] nodeY, string[] labels, int selected,
                                 int[] sequence, bool sequenceIsPath)
@@ -88,6 +85,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Traza una arista con Bresenham y pone la flecha si es dirigida.
         private static void DrawEdge(ScreenBuffer buffer, Glyphs glyphs, int ox, int oy, int[] nx, int[] ny,
                                      string[] labels, int u, int v, bool twoWay, ConsoleColor color)
         {
@@ -171,9 +169,11 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Indica si la celda cae dentro de la etiqueta del nodo.
         private static bool Inside(int x, int y, int nodeX, int nodeY, int width)
             => y == nodeY && x >= nodeX && x < nodeX + width;
 
+        // Elige el carácter de línea según la dirección del trazo.
         private static char LineFor(Glyphs glyphs, int stepX, int stepY)
         {
             if (stepY == 0)
@@ -189,6 +189,7 @@ namespace ElectricGrid.Tui
             return (stepX > 0) == (stepY > 0) ? glyphs.DiagonalDown : glyphs.DiagonalUp;
         }
 
+        // Elige la flecha según la dirección final de la arista.
         private static char ArrowFor(Glyphs glyphs, int stepX, int stepY, int totalX, int totalY)
         {
             bool horizontal = stepY == 0 || (stepX != 0 && Math.Abs(totalX) >= 2 * Math.Abs(totalY));

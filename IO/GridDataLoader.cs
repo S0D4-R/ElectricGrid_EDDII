@@ -7,22 +7,19 @@ using ElectricGrid.Services;
 
 namespace ElectricGrid.IO
 {
-    /// <summary>
-    /// Importa subestaciones y líneas desde archivos de texto delimitados por comas (.csv o .txt).
-    /// Se ignoran las líneas vacías, las que inician con # y un encabezado opcional.
-    /// </summary>
+    // Lee subestaciones y líneas desde archivos CSV o TXT.
     public sealed class GridDataLoader
     {
         private const char Separator = ',';
         private readonly IPowerGridService _service;
 
-        /// <summary>Crea un cargador asociado a un servicio de la red.</summary>
+        // Guarda el servicio que recibirá los datos cargados.
         public GridDataLoader(IPowerGridService service)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
         }
 
-        /// <summary>Localiza un archivo en la ruta indicada, junto al ejecutable o en su carpeta Data; devuelve nulo si no existe.</summary>
+        // Busca el archivo en la ruta indicada o en las carpetas de datos.
         public static string? ResolvePath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
@@ -55,7 +52,7 @@ namespace ElectricGrid.IO
             return null;
         }
 
-        /// <summary>Carga subestaciones desde un archivo con las columnas código, nombre y capacidad en MW.</summary>
+        // Carga las subestaciones y registra las filas válidas.
         public LoadReport LoadSubstations(string path)
         {
             if (!TryReadLines(path, out string[] lines, out string fileName, out LoadReport? failure))
@@ -113,7 +110,7 @@ namespace ElectricGrid.IO
             return new LoadReport(true, loaded, 0, skipped, errors.ToArray());
         }
 
-        /// <summary>Carga líneas desde un archivo; las subestaciones deben estar registradas previamente.</summary>
+        // Carga las líneas; las subestaciones deben existir antes.
         public LoadReport LoadLines(string path)
         {
             if (!TryReadLines(path, out string[] lines, out string fileName, out LoadReport? failure))
@@ -173,7 +170,7 @@ namespace ElectricGrid.IO
             return new LoadReport(true, 0, loaded, skipped, errors.ToArray());
         }
 
-        /// <summary>Carga el archivo de subestaciones y luego el de líneas, y combina ambos reportes.</summary>
+        // Carga primero las subestaciones y después las líneas.
         public LoadReport LoadAll(string substationsPath, string linesPath)
         {
             LoadReport substations = LoadSubstations(substationsPath);
@@ -181,6 +178,7 @@ namespace ElectricGrid.IO
             return LoadReport.Combine(substations, lines);
         }
 
+        // Resuelve y lee el archivo; deja el error listo si no se puede.
         private static bool TryReadLines(string path, out string[] lines, out string fileName, out LoadReport? failure)
         {
             lines = new string[0];
@@ -207,6 +205,7 @@ namespace ElectricGrid.IO
             }
         }
 
+        // Separa los campos y descarta líneas vacías o comentadas.
         private static bool TryGetFields(string rawLine, out string[] fields)
         {
             string trimmed = rawLine.Trim();
@@ -225,13 +224,16 @@ namespace ElectricGrid.IO
             return true;
         }
 
+        // Reconoce el encabezado en español o en inglés.
         private static bool IsHeader(string firstField, string spanishName, string englishName)
             => firstField.StartsWith(spanishName, StringComparison.OrdinalIgnoreCase)
                || firstField.StartsWith(englishName, StringComparison.OrdinalIgnoreCase);
 
+        // Interpreta números con punto decimal.
         private static bool TryParseNumber(string text, out double value)
             => double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value);
 
+        // Acepta true, 1, yes, si y sus variantes.
         private static bool ParseBoolean(string text)
         {
             string value = text.Trim().ToLowerInvariant();

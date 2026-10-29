@@ -3,68 +3,61 @@ using ElectricGrid.Models;
 
 namespace ElectricGrid.Services
 {
-    /// <summary>
-    /// Contrato de las operaciones de la red eléctrica. Cualquier interfaz de usuario
-    /// (la TUI actual o una GUI futura) se comunica con el núcleo únicamente a través de él.
-    /// </summary>
+    // Operaciones de la red que usa cualquier interfaz de usuario.
     public interface IPowerGridService
     {
-        /// <summary>Registra una subestación en la tabla hash, el grafo, Union-Find y el Trie.</summary>
+        // Registra una subestación en la tabla hash, el grafo, Union-Find y el Trie.
         OperationResult RegisterSubstation(string code, string name, double capacityMw);
 
-        /// <summary>Elimina una subestación y todas las líneas conectadas a ella.</summary>
+        // Elimina la subestación y todas sus líneas.
         OperationResult RemoveSubstation(string code);
 
-        /// <summary>Busca una subestación por código en la tabla hash; devuelve nulo si no existe.</summary>
+        // Busca una subestación por su código.
         Substation? FindSubstation(string code);
 
-        /// <summary>Sugiere subestaciones cuyo nombre empieza con el prefijo, usando el Trie y la tabla hash.</summary>
+        // Sugiere subestaciones cuyo nombre empieza con el prefijo.
         Substation[] SuggestSubstations(string prefix, int maxResults);
-        
 
-        /// <summary>
-        /// Busca subestaciones por texto. Usa el Trie cuando está disponible y, mientras tanto,
-        /// una búsqueda lineal por coincidencia parcial en el código o el nombre.
-        /// </summary>
+        // Busca subestaciones por texto en el nombre o en el código.
         Substation[] SearchSubstations(string text, int maxResults);
 
-        /// <summary>Indica si el autocompletado por nombre está disponible.</summary>
+        // Indica si está disponible el autocompletado por nombre.
         bool SupportsAutocomplete { get; }
 
-        /// <summary>Devuelve todas las subestaciones en orden de registro.</summary>
+        // Devuelve todas las subestaciones registradas.
         Substation[] GetAllSubstations();
 
-        /// <summary>Registra una línea entre dos subestaciones existentes y unifica sus zonas.</summary>
+        // Registra una línea entre dos subestaciones existentes.
         OperationResult RegisterLine(PowerLine line);
 
-        /// <summary>Elimina una línea y reconstruye las zonas eléctricas.</summary>
+        // Elimina una línea y recalcula las zonas.
         OperationResult RemoveLine(string sourceCode, string targetCode, bool bidirectional);
 
-        /// <summary>Devuelve todas las líneas; una de doble sentido aparece una sola vez.</summary>
+        // Devuelve todas las líneas sin duplicar las bidireccionales.
         PowerLine[] GetAllLines();
 
-        /// <summary>Analiza con Union-Find una línea propuesta antes de aprobarla.</summary>
+        // Analiza si una línea nueva uniría zonas o sería redundante.
         LineProposalResult EvaluateProposedLine(string sourceCode, string targetCode);
 
-        /// <summary>Calcula la ruta óptima: resuelve códigos con la tabla hash, valida la zona con Union-Find y aplica Dijkstra.</summary>
+        // Calcula la ruta óptima entre dos subestaciones.
         RouteResult FindOptimalRoute(string sourceCode, string targetCode, EdgeWeightKind criterion);
 
-        /// <summary>Recorrido en anchura desde una subestación, siguiendo el sentido de las líneas.</summary>
+        // Recorre la red en anchura desde una subestación.
         TraversalResult TraverseBreadthFirst(string startCode);
 
-        /// <summary>Recorrido en profundidad desde una subestación, siguiendo el sentido de las líneas.</summary>
+        // Recorre la red en profundidad desde una subestación.
         TraversalResult TraverseDepthFirst(string startCode);
 
-        /// <summary>Indica si dos subestaciones pertenecen a la misma zona eléctrica.</summary>
+        // Indica si dos subestaciones están en la misma zona.
         ConnectivityResult CheckSameZone(string codeA, string codeB);
 
-        /// <summary>Devuelve las zonas eléctricas conectadas.</summary>
+        // Devuelve las zonas eléctricas conectadas.
         ElectricalZone[] GetZones();
 
-        /// <summary>Devuelve las cifras agregadas de la red.</summary>
+        // Devuelve las cifras agregadas de la red.
         GridSummary GetSummary();
 
-        /// <summary>Elimina todos los datos y deja la red vacía.</summary>
+        // Borra todos los datos de la red.
         void Clear();
     }
 }

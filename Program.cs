@@ -5,12 +5,10 @@ using ElectricGrid.Services;
 
 namespace ElectricGrid
 {
-    /// <summary>
-    /// Punto de entrada único de la aplicación. Crea el servicio del núcleo e inicia directamente la interfaz TUI.
-    /// El parámetro opcional --ascii fuerza el dibujo con caracteres ASCII simples.
-    /// </summary>
+    // Punto de entrada de la aplicación.
     internal static class Program
     {
+        // Inicia el servicio y arranca la interfaz de texto.
         private static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
@@ -21,6 +19,7 @@ namespace ElectricGrid
             new TuiApp(service, service, ascii).Run();
         }
 
+        // Comprueba si el argumento indicado está presente.
         private static bool HasFlag(string[] args, string flag)
         {
             for (int i = 0; i < args.Length; i++)
@@ -34,7 +33,7 @@ namespace ElectricGrid
             return false;
         }
 
-        /// <summary>Indica si la terminal es de las que no soportan caracteres de recuadro, para usar ASCII automáticamente.</summary>
+        // Detecta terminales que no muestran bien los caracteres de recuadro.
         private static bool IsLimitedTerminal()
         {
             string? term = Environment.GetEnvironmentVariable("TERM");

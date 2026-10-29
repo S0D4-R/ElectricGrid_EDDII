@@ -7,12 +7,7 @@ using ElectricGrid.Services;
 
 namespace ElectricGrid.Tui
 {
-    /// <summary>
-    /// Interfaz de texto en pantalla completa: menú a la izquierda, dibujo interactivo del grafo a la derecha,
-    /// una línea de información y una barra de estado. Solo usa System.Console y se comunica con el núcleo
-    /// a través de IPowerGridService. Se divide en TuiApp.cs (ciclo y marco), TuiApp.Dialogs.cs (ventanas
-    /// modales) y TuiApp.Actions.cs (acciones del menú).
-    /// </summary>
+    // Interfaz de texto con menú, grafo y barra de estado.
     internal sealed partial class TuiApp
     {
         private const int MinWidth = 80;
@@ -33,6 +28,7 @@ namespace ElectricGrid.Tui
 
         private sealed class MenuItem
         {
+            // Crea una opción de menú; sin acción es un encabezado.
             public MenuItem(string label, Action? run)
             {
                 Label = label;
@@ -82,6 +78,7 @@ namespace ElectricGrid.Tui
         private string _status = "Elija 'Cargar ejemplo' para comenzar.";
         private ConsoleColor _statusColor = ConsoleColor.Gray;
 
+        // Prepara el servicio, el cargador, el menú y la primera copia del grafo.
         public TuiApp(IPowerGridService service, IStructureInspector inspector, bool asciiOnly)
         {
             _service = service;
@@ -93,7 +90,7 @@ namespace ElectricGrid.Tui
             _menuIndex = FirstSelectable();
         }
 
-        /// <summary>Ejecuta la interfaz hasta que el usuario sale; requiere una terminal interactiva.</summary>
+        // Mantiene el ciclo de dibujo y lectura de teclas hasta salir.
         public void Run()
         {
             if (Console.IsInputRedirected || Console.IsOutputRedirected)
@@ -144,7 +141,7 @@ namespace ElectricGrid.Tui
             }
         }
 
-        /// <summary>Espera una tecla sondeando la terminal; si cambió el tamaño de la ventana reconstruye el búfer y devuelve nulo.</summary>
+        // Espera una tecla y avisa cuando cambia el tamaño de la terminal.
         private ConsoleKeyInfo? WaitKey()
         {
             while (true)
@@ -164,6 +161,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Ajusta el búfer al tamaño actual de la ventana.
         private void ResizeBuffer()
         {
             _width = Math.Max(1, Console.WindowWidth);
@@ -174,7 +172,7 @@ namespace ElectricGrid.Tui
             Console.Clear();
         }
 
-        /// <summary>Procesa una tecla según el panel que tiene el foco.</summary>
+        // Reparte cada tecla según el panel que tiene el foco.
         private void HandleKey(ConsoleKeyInfo key)
         {
             bool ctrl = (key.Modifiers & ConsoleModifiers.Control) != 0;
@@ -221,6 +219,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Atiende las teclas del menú.
         private void HandleMenuKey(ConsoleKeyInfo key)
         {
             switch (key.Key)
@@ -255,6 +254,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Atiende las teclas del panel del grafo.
         private void HandleGraphKey(ConsoleKeyInfo key)
         {
             switch (key.Key)
@@ -301,6 +301,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Nombre que se muestra para cada modo de etiquetas.
         private static string LabelModeName(LabelMode mode)
         {
             switch (mode)
@@ -311,6 +312,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Mueve la selección del menú saltando los encabezados.
         private void MoveMenu(int delta)
         {
             int direction = delta < 0 ? -1 : 1;
@@ -336,6 +338,7 @@ namespace ElectricGrid.Tui
             _menuIndex = index;
         }
 
+        // Devuelve la primera opción que no es encabezado.
         private int FirstSelectable()
         {
             for (int i = 0; i < _menu.Length; i++)
@@ -349,6 +352,7 @@ namespace ElectricGrid.Tui
             return 0;
         }
 
+        // Ejecuta la opción seleccionada del menú.
         private void RunMenuItem()
         {
             Action? run = _menu[_menuIndex].Run;
@@ -358,7 +362,7 @@ namespace ElectricGrid.Tui
             }
         }
 
-        /// <summary>Ejecuta una acción convirtiendo los fallos esperados en ventanas de aviso y marca el grafo para actualizarse.</summary>
+        // Ejecuta una acción y muestra los errores esperados en un cuadro.
         private void RunSafely(Action action)
         {
             try
@@ -377,7 +381,7 @@ namespace ElectricGrid.Tui
             _snapshotDirty = true;
         }
 
-        /// <summary>Mueve la selección al nodo más cercano en la dirección indicada, según la geometría de pantalla.</summary>
+        // Busca el nodo más cercano en la dirección indicada.
         private void MoveSelection(int directionX, int directionY)
         {
             int n = _snapshot.Nodes.Length;
@@ -420,18 +424,21 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Marca un nodo como seleccionado y guarda su código.
         private void SelectNode(int index)
         {
             _selectedNode = index;
             _selectedCode = _snapshot.Nodes[index].Code;
         }
 
+        // Cambia el mensaje y el color de la barra de estado.
         private void SetStatus(string message, ConsoleColor color)
         {
             _status = message;
             _statusColor = color;
         }
 
+        // Quita el resaltado del grafo.
         private void ClearHighlight()
         {
             _highlightCodes = new string[0];
@@ -439,7 +446,7 @@ namespace ElectricGrid.Tui
             _highlightTitle = string.Empty;
         }
 
-        /// <summary>Compone el cuadro completo en el búfer: título, menú, grafo, información y barra de estado.</summary>
+        // Compone el marco completo de la interfaz.
         private void DrawFrame()
         {
             _buffer.Clear();
@@ -464,6 +471,7 @@ namespace ElectricGrid.Tui
             DrawStatusBar();
         }
 
+        // Avisa cuando la terminal no llega al tamaño mínimo.
         private void DrawTooSmall()
         {
             string[] lines =
@@ -481,6 +489,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Dibuja la barra superior con el nombre y los totales.
         private void DrawTitleBar()
         {
             _buffer.Fill(0, 0, _width, 1, ' ', ConsoleColor.White, ConsoleColor.DarkBlue);
@@ -490,6 +499,7 @@ namespace ElectricGrid.Tui
             _buffer.Text(_width - right.Length, 0, right, ConsoleColor.Cyan, ConsoleColor.DarkBlue);
         }
 
+        // Dibuja el menú y ajusta el desplazamiento.
         private void DrawMenu(int x, int y, int w, int h)
         {
             bool focused = _focus == Focus.Menu;
@@ -547,6 +557,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Dibuja el panel del grafo o un aviso si está vacío.
         private void DrawGraphPanel(int x, int y, int w, int h)
         {
             bool focused = _focus == Focus.Graph;
@@ -573,6 +584,7 @@ namespace ElectricGrid.Tui
                              _selectedNode, HighlightIndices(), _highlightIsPath);
         }
 
+        // Muestra la subestación seleccionada y el resaltado actual.
         private void DrawInfoLines()
         {
             int row = _height - 3;
@@ -609,6 +621,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Dibuja la barra inferior con atajos y estado.
         private void DrawStatusBar()
         {
             int row = _height - 1;
@@ -624,6 +637,7 @@ namespace ElectricGrid.Tui
                          ConsoleColor.Gray, Math.Max(0, keysStart - 2));
         }
 
+        // Usa una versión oscura del color para el texto de estado.
         private static ConsoleColor DarkenForStatus(ConsoleColor color)
         {
             switch (color)
@@ -635,6 +649,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Reconstruye la copia del grafo cuando los datos cambiaron.
         private void EnsureSnapshot()
         {
             if (!_snapshotDirty)
@@ -656,7 +671,7 @@ namespace ElectricGrid.Tui
             _selectedCode = _snapshot.Nodes.Length > 0 ? _snapshot.Nodes[index].Code : null;
         }
 
-        /// <summary>Recalcula etiquetas y posiciones de los nodos cuando cambian los datos, el tamaño o el estilo de etiqueta.</summary>
+        // Recalcula etiquetas y posiciones cuando hace falta.
         private void EnsureLayout(int canvasWidth, int canvasHeight)
         {
             int n = _snapshot.Nodes.Length;
@@ -684,6 +699,7 @@ namespace ElectricGrid.Tui
             _layoutDirty = false;
         }
 
+        // Acorta el código para las etiquetas compactas.
         private static string ShortCode(string code)
         {
             int dash = code.LastIndexOf('-');
@@ -695,6 +711,7 @@ namespace ElectricGrid.Tui
             return code.Length > 5 ? code.Substring(0, 5) : code;
         }
 
+        // Convierte los códigos resaltados en índices de nodo.
         private int[] HighlightIndices()
         {
             ArrayBuffer<int> indices = new ArrayBuffer<int>(_highlightCodes.Length + 1);

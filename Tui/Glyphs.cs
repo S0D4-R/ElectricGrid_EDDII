@@ -1,8 +1,9 @@
 namespace ElectricGrid.Tui
 {
-    /// <summary>Conjunto de caracteres para dibujar recuadros y aristas; incluye una versión solo ASCII para terminales limitadas.</summary>
+    // Caracteres para dibujar los paneles y las aristas.
     internal sealed class Glyphs
     {
+        // Guarda el juego de caracteres elegido.
         private Glyphs(bool unicode, char h, char v, char tl, char tr, char bl, char br,
                        char diagDown, char diagUp, char cross)
         {
@@ -38,7 +39,7 @@ namespace ElectricGrid.Tui
 
         public static Glyphs Ascii { get; } = new Glyphs(false, '-', '|', '+', '+', '+', '+', '\\', '/', '+');
 
-        /// <summary>Indica si el carácter es parte de una línea de arista.</summary>
+        // Indica si el carácter sirve para dibujar una arista.
         public bool IsLineGlyph(char c)
             => c == Horizontal || c == Vertical || c == DiagonalDown || c == DiagonalUp || c == Cross;
     }

@@ -6,11 +6,7 @@ using ElectricGrid.Collections;
 
 namespace ElectricGrid.DataStructures
 {
-    /// <summary>
-    /// Tabla hash con llaves de texto y resolución de colisiones por encadenamiento.
-    /// Se usa como registro principal de subestaciones, localizadas por su código.
-    /// </summary>
-    /// <remarks>Responsable: Integrante A (Tabla Hash).</remarks>
+    // Tabla hash con encadenamiento para resolver colisiones.
     public sealed class HashTable<TValue>
     {
         private const int DefaultCapacity = 17;
@@ -22,6 +18,7 @@ namespace ElectricGrid.DataStructures
             public TValue Value;
             public Entry? Next;
 
+            // Crea la entrada con su llave, valor y siguiente nodo.
             public Entry(string key, TValue value, Entry? next)
             {
                 Key = key;
@@ -33,22 +30,19 @@ namespace ElectricGrid.DataStructures
         private Entry?[] _buckets;
         private int _count;
 
-        /// <summary>Crea una tabla vacía; la cantidad de cubetas se ajusta al siguiente número primo.</summary>
+        // Ajusta la capacidad al siguiente número primo.
         public HashTable(int initialCapacity = DefaultCapacity)
         {
             _buckets = new Entry?[NextPrime(initialCapacity < 3 ? 3 : initialCapacity)];
         }
 
-        /// <summary>Cantidad de pares almacenados.</summary>
         public int Count => _count;
 
-        /// <summary>Cantidad actual de cubetas.</summary>
         public int Capacity => _buckets.Length;
 
-        /// <summary>Relación entre pares almacenados y cubetas.</summary>
         public double LoadFactor => (double)_count / _buckets.Length;
 
-        /// <summary>Inserta un par nuevo; devuelve falso si la llave ya existe.</summary>
+        // Inserta un par nuevo y devuelve false si la llave ya existe.
         public bool Insert(string key, TValue value)
         {
             ValidateKey(key);
@@ -73,7 +67,7 @@ namespace ElectricGrid.DataStructures
             return true;
         }
 
-        /// <summary>Reemplaza el valor de una llave existente; devuelve falso si no existe.</summary>
+        // Cambia el valor de una llave existente.
         public bool Update(string key, TValue value)
         {
             Entry? entry = FindEntry(key);
@@ -86,7 +80,7 @@ namespace ElectricGrid.DataStructures
             return true;
         }
 
-        /// <summary>Busca una llave y devuelve su valor; falso si no existe.</summary>
+        // Busca una llave y devuelve su valor.
         public bool TryGetValue(string key, out TValue value)
         {
             Entry? entry = FindEntry(key);
@@ -100,10 +94,10 @@ namespace ElectricGrid.DataStructures
             return true;
         }
 
-        /// <summary>Indica si la llave existe en la tabla.</summary>
+        // Indica si la llave está en la tabla.
         public bool ContainsKey(string key) => FindEntry(key) != null;
 
-        /// <summary>Elimina una llave; devuelve falso si no existía.</summary>
+        // Elimina la llave de su cadena de colisión.
         public bool Remove(string key)
         {
             ValidateKey(key);
@@ -134,14 +128,14 @@ namespace ElectricGrid.DataStructures
             return false;
         }
 
-        /// <summary>Elimina todos los pares de la tabla.</summary>
+        // Vacía todas las cubetas.
         public void Clear()
         {
             ArrayUtils.Clear(_buckets);
             _count = 0;
         }
 
-        /// <summary>Recorre todos los pares en el orden de las cubetas.</summary>
+        // Recorre los pares cubeta por cubeta.
         public void ForEach(Action<string, TValue> visitor)
         {
             for (int i = 0; i < _buckets.Length; i++)
@@ -153,7 +147,7 @@ namespace ElectricGrid.DataStructures
             }
         }
 
-        /// <summary>Devuelve todas las llaves almacenadas.</summary>
+        // Devuelve todas las llaves almacenadas.
         public string[] GetKeys()
         {
             string[] keys = new string[_count];
@@ -162,7 +156,7 @@ namespace ElectricGrid.DataStructures
             return keys;
         }
 
-        /// <summary>Genera una descripción imprimible de las cubetas y sus cadenas de colisión.</summary>
+        // Muestra las cadenas de colisión más importantes.
         public string Describe(int maxBucketsShown = 40)
         {
             StringBuilder builder = new StringBuilder();
@@ -207,7 +201,7 @@ namespace ElectricGrid.DataStructures
             return builder.ToString();
         }
 
-        /// <summary>Calcula el hash djb2 de un texto, independiente de GetHashCode.</summary>
+        // Calcula el hash djb2 de una llave.
         public static uint ComputeHash(string key)
         {
             uint hash = 5381;
@@ -219,11 +213,13 @@ namespace ElectricGrid.DataStructures
             return hash;
         }
 
+        // Convierte el hash en una posición de cubeta.
         private static int IndexFor(string key, int bucketCount)
         {
             return (int)(ComputeHash(key) % (uint)bucketCount);
         }
 
+        // Busca la entrada de una llave dentro de su cubeta.
         private Entry? FindEntry(string key)
         {
             ValidateKey(key);
@@ -240,6 +236,7 @@ namespace ElectricGrid.DataStructures
             return null;
         }
 
+        // Duplica las cubetas y reparte las entradas existentes.
         private void Rehash()
         {
             Entry?[] oldBuckets = _buckets;
@@ -261,6 +258,7 @@ namespace ElectricGrid.DataStructures
             _buckets = newBuckets;
         }
 
+        // Rechaza llaves nulas o vacías.
         private static void ValidateKey(string key)
         {
             if (string.IsNullOrEmpty(key))
@@ -269,6 +267,7 @@ namespace ElectricGrid.DataStructures
             }
         }
 
+        // Devuelve el primer primo mayor o igual al valor dado.
         private static int NextPrime(int minimum)
         {
             int candidate = minimum % 2 == 0 ? minimum + 1 : minimum;
@@ -280,6 +279,7 @@ namespace ElectricGrid.DataStructures
             return candidate;
         }
 
+        // Comprueba si un número es primo.
         private static bool IsPrime(int number)
         {
             if (number < 2)

@@ -4,14 +4,14 @@ using System;
 
 namespace ElectricGrid.DataStructures
 {
-    /// <summary>Representa una arista (conexión) entre dos nodos con un peso (distancia/costo).</summary>
+    // Arista dirigida con el nodo destino y su peso.
     public readonly struct Edge(int targetNode, double weight)
     {
         public int TargetNode { get; } = targetNode;
         public double Weight { get; } = weight;
     }
 
-    /// <summary>Resultado de la ejecución del algoritmo de Dijkstra.</summary>
+    // Resultado de una búsqueda: distancia total y camino de nombres.
     public readonly struct ShortestPathResult(double totalDistance, string[] path)
     {
         public double TotalDistance { get; } = totalDistance;
@@ -19,10 +19,7 @@ namespace ElectricGrid.DataStructures
         public bool IsReachable => Path.Length > 0;
     }
 
-    /// <summary>
-    /// Grafo dirigido y algoritmo de caminos mínimos implementado desde cero.
-    /// No utiliza System.Collections.Generic, manejando memoria con arreglos primitivos.
-    /// </summary>
+    // Grafo dirigido usado por Dijkstra, con arreglos y un min-heap propio.
     public sealed class DijkstraGraph
     {
         private string[] _nodeNames;
@@ -30,6 +27,7 @@ namespace ElectricGrid.DataStructures
         private int[] _edgeCounts;
         private int _nodeCount;
 
+        // Reserva la capacidad inicial de nodos y aristas.
         public DijkstraGraph(int initialCapacity = 16)
         {
             _nodeNames = new string[initialCapacity];
@@ -38,10 +36,9 @@ namespace ElectricGrid.DataStructures
             _nodeCount = 0;
         }
 
-        /// <summary>Agrega un nodo al grafo y devuelve su ID interno.</summary>
+        // Devuelve el id del nodo y lo crea si todavía no existe.
         public int AddNode(string name)
         {
-            // Evitar duplicados
             for (int i = 0; i < _nodeCount; i++)
             {
                 if (string.Equals(_nodeNames[i], name, StringComparison.Ordinal))
@@ -51,7 +48,7 @@ namespace ElectricGrid.DataStructures
             if (_nodeCount == _nodeNames.Length)
             {
                 int newSize = _nodeNames.Length * 2;
-                
+
                 string[] newNames = new string[newSize];
                 Array.Copy(_nodeNames, newNames, _nodeCount);
                 _nodeNames = newNames;
@@ -67,13 +64,13 @@ namespace ElectricGrid.DataStructures
 
             int id = _nodeCount++;
             _nodeNames[id] = name;
-            _edges[id] = new Edge[2]; // Capacidad inicial de aristas por nodo
+            _edges[id] = new Edge[2];
             _edgeCounts[id] = 0;
 
             return id;
         }
 
-        /// <summary>Agrega una arista dirigida entre dos nodos.</summary>
+        // Agrega una arista dirigida entre dos nombres de nodo.
         public void AddEdge(string source, string target, double weight)
         {
             int u = AddNode(source);
@@ -91,7 +88,7 @@ namespace ElectricGrid.DataStructures
             _edgeCounts[u]++;
         }
 
-        /// <summary>Encuentra el camino más corto utilizando Dijkstra optimizado con un Min-Heap propio.</summary>
+        // Calcula el camino de menor peso entre dos nodos.
         public ShortestPathResult FindShortestPath(string startNode, string endNode)
         {
             int startId = GetNodeId(startNode);
@@ -118,10 +115,8 @@ namespace ElectricGrid.DataStructures
                 HeapNode current = priorityQueue.Pop();
                 int u = current.NodeId;
 
-                // Si llegamos al destino, podemos detenernos tempranamente
                 if (u == endId) break;
 
-                // Ignorar entradas obsoletas en el heap
                 if (current.Distance > distances[u]) continue;
 
                 for (int i = 0; i < _edgeCounts[u]; i++)
@@ -139,11 +134,9 @@ namespace ElectricGrid.DataStructures
                 }
             }
 
-            // Reconstruir el camino si se alcanzó el destino
             if (distances[endId] == double.PositiveInfinity)
                 return new ShortestPathResult(double.PositiveInfinity, Array.Empty<string>());
 
-            // Calcular longitud del camino
             int pathLength = 0;
             int curr = endId;
             while (curr != -1)
@@ -163,6 +156,7 @@ namespace ElectricGrid.DataStructures
             return new ShortestPathResult(distances[endId], path);
         }
 
+        // Busca un nodo por nombre y devuelve -1 si no está.
         private int GetNodeId(string name)
         {
             for (int i = 0; i < _nodeCount; i++)
@@ -173,20 +167,20 @@ namespace ElectricGrid.DataStructures
             return -1;
         }
 
-        // ==========================================================
-        // Cola de Prioridad (Min-Heap) implementada con Arreglos
-        // ==========================================================
+        // Entrada del heap con el nodo y su distancia acumulada.
         private readonly struct HeapNode(int nodeId, double distance)
         {
             public int NodeId { get; } = nodeId;
             public double Distance { get; } = distance;
         }
 
+        // Cola de prioridad mínima implementada sobre un arreglo.
         private sealed class MinHeap
         {
             private HeapNode[] _data;
             private int _count;
 
+            // Crea el heap con la capacidad indicada.
             public MinHeap(int capacity)
             {
                 _data = new HeapNode[capacity == 0 ? 4 : capacity];
@@ -195,6 +189,7 @@ namespace ElectricGrid.DataStructures
 
             public bool IsEmpty => _count == 0;
 
+            // Inserta un nodo y restaura el orden del heap.
             public void Push(int nodeId, double distance)
             {
                 if (_count == _data.Length)
@@ -209,6 +204,7 @@ namespace ElectricGrid.DataStructures
                 _count++;
             }
 
+            // Saca el nodo con la menor distancia.
             public HeapNode Pop()
             {
                 if (_count == 0) throw new InvalidOperationException("Heap vacío");
@@ -216,7 +212,7 @@ namespace ElectricGrid.DataStructures
                 HeapNode root = _data[0];
                 _count--;
                 _data[0] = _data[_count];
-                _data[_count] = default; // Limpiar referencia/valores
+                _data[_count] = default;
 
                 if (_count > 0)
                 {
@@ -226,6 +222,7 @@ namespace ElectricGrid.DataStructures
                 return root;
             }
 
+            // Sube un elemento hasta que su padre sea menor.
             private void HeapifyUp(int index)
             {
                 int parent = (index - 1) / 2;
@@ -237,6 +234,7 @@ namespace ElectricGrid.DataStructures
                 }
             }
 
+            // Baja un elemento hasta que sus hijos sean mayores.
             private void HeapifyDown(int index)
             {
                 int lastIndex = _count - 1;
@@ -259,6 +257,7 @@ namespace ElectricGrid.DataStructures
                 }
             }
 
+            // Intercambia dos posiciones del arreglo.
             private void Swap(int i, int j)
             {
                 HeapNode temp = _data[i];

@@ -14,6 +14,7 @@ namespace ElectricGrid.Tui
         private const string DefaultReportFile = "reporte_red.txt";
         private const int SearchResultLimit = 10;
 
+        // Arma las secciones y acciones del menú.
         private MenuItem[] BuildMenu()
         {
             return new[]
@@ -49,11 +50,13 @@ namespace ElectricGrid.Tui
             };
         }
 
+        // Carga los archivos de ejemplo.
         private void ActionLoadSample()
         {
             AfterLoad(_loader.LoadAll(DefaultSubstationsFile, DefaultLinesFile));
         }
 
+        // Pide un archivo y carga subestaciones.
         private void ActionLoadSubstations()
         {
             string[]? values = ShowForm("Cargar subestaciones", new[]
@@ -67,6 +70,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Pide un archivo y carga líneas.
         private void ActionLoadLines()
         {
             string[]? values = ShowForm("Cargar líneas", new[]
@@ -80,7 +84,7 @@ namespace ElectricGrid.Tui
             }
         }
 
-        /// <summary>Muestra el resultado de una carga de archivo y actualiza el grafo.</summary>
+        // Muestra el resultado de la carga y refresca el grafo.
         private void AfterLoad(LoadReport report)
         {
             _snapshotDirty = true;
@@ -109,6 +113,7 @@ namespace ElectricGrid.Tui
             SetStatus($"Se cargaron {report.SubstationsLoaded} subestación(es) y {report.LinesLoaded} línea(s).", ok ? ConsoleColor.Green : ConsoleColor.Yellow);
         }
 
+        // Confirma y borra todos los datos.
         private void ActionClear()
         {
             if (Confirm("Se eliminarán todas las subestaciones y líneas. ¿Continuar?", false))
@@ -121,6 +126,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Pide los datos y registra una subestación.
         private void ActionRegisterSubstation()
         {
             string[]? v = ShowForm("Registrar subestación", new[]
@@ -145,6 +151,7 @@ namespace ElectricGrid.Tui
             _snapshotDirty = true;
         }
 
+        // Busca por código y muestra el detalle.
         private void ActionFindSubstation()
         {
             string[]? v = ShowForm("Buscar subestación", new[] { new FormField("Código", string.Empty, FieldKind.Text) });
@@ -166,7 +173,7 @@ namespace ElectricGrid.Tui
             ShowNodeDetails(found);
         }
 
-        /// <summary>Busca subestaciones por parte del nombre o del código y selecciona en el grafo la que se elija.</summary>
+        // Busca por nombre o código y selecciona el resultado.
         private void ActionSearch()
         {
             string[]? v = ShowForm("Buscar subestación", new[]
@@ -214,6 +221,7 @@ namespace ElectricGrid.Tui
             SetStatus($"Seleccionada {results[choice].Code}.", ConsoleColor.Green);
         }
 
+        // Confirma y elimina una subestación.
         private void ActionRemoveSubstation()
         {
             string[]? v = ShowForm("Eliminar subestación", new[] { SubstationField("Subestación") });
@@ -237,6 +245,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Muestra la lista completa de subestaciones.
         private void ActionListSubstations()
         {
             Substation[] all = _service.GetAllSubstations();
@@ -253,6 +262,7 @@ namespace ElectricGrid.Tui
             ShowText("Subestaciones", lines.ToArray());
         }
 
+        // Pide los datos y registra una línea.
         private void ActionRegisterLine()
         {
             string[]? v = ShowForm("Registrar línea", new[]
@@ -270,6 +280,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Valida los datos y crea la línea.
         private void RegisterLineFromValues(string origin, string destination, string length, string cost, string twoWay)
         {
             string? a = ResolveCode(origin);
@@ -290,7 +301,7 @@ namespace ElectricGrid.Tui
             _snapshotDirty = true;
         }
 
-        /// <summary>Verifica con Union-Find si ambas subestaciones ya comparten zona antes de aprobar una línea nueva.</summary>
+        // Analiza la propuesta con Union-Find antes de registrarla.
         private void ActionProposeLine()
         {
             string[]? pair = ShowForm("Proponer línea nueva", new[]
@@ -342,6 +353,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Confirma y elimina una línea.
         private void ActionRemoveLine()
         {
             string[]? v = ShowForm("Eliminar línea", new[]
@@ -369,6 +381,7 @@ namespace ElectricGrid.Tui
             _snapshotDirty = true;
         }
 
+        // Muestra la lista completa de líneas.
         private void ActionListLines()
         {
             PowerLine[] all = _service.GetAllLines();
@@ -386,7 +399,7 @@ namespace ElectricGrid.Tui
             ShowText("Líneas", lines.ToArray());
         }
 
-        /// <summary>Calcula la ruta óptima (tabla hash, Union-Find y Dijkstra) y resalta el camino en el grafo.</summary>
+        // Calcula la ruta óptima y la resalta.
         private void ActionRoute()
         {
             string[]? v = ShowForm("Ruta óptima", new[]
@@ -432,6 +445,7 @@ namespace ElectricGrid.Tui
             SetStatus($"{route.Path.Length - 1} tramo(s) | {route.TotalLengthKm:F1} km | costo {route.TotalMaintenanceCost:F0}", ConsoleColor.Green);
         }
 
+        // Pide el inicio y ejecuta BFS o DFS.
         private void ActionTraversal(bool breadthFirst)
         {
             string[]? v = ShowForm(breadthFirst ? "Recorrido BFS" : "Recorrido DFS", new[] { SubstationField("Inicio") });
@@ -451,6 +465,7 @@ namespace ElectricGrid.Tui
             _focus = Focus.Graph;
         }
 
+        // Ejecuta el recorrido desde el nodo seleccionado.
         private void RunTraversalFromSelected(bool breadthFirst)
         {
             if (_selectedCode != null)
@@ -459,6 +474,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Ejecuta el recorrido y guarda el orden para resaltarlo.
         private void ApplyTraversal(string startCode, bool breadthFirst)
         {
             TraversalResult result = breadthFirst ? _service.TraverseBreadthFirst(startCode) : _service.TraverseDepthFirst(startCode);
@@ -480,6 +496,7 @@ namespace ElectricGrid.Tui
             SetStatus($"{kind} alcanzó {result.Order.Length} nodos.", ConsoleColor.Green);
         }
 
+        // Comprueba si dos subestaciones están en la misma zona.
         private void ActionSameZone()
         {
             string[]? v = ShowForm("¿Misma zona eléctrica?", new[]
@@ -505,6 +522,7 @@ namespace ElectricGrid.Tui
             ShowMessage("Zona eléctrica (Union-Find)", Wrap(result.Message, 56), result.Connected ? ConsoleColor.Green : ConsoleColor.Yellow);
         }
 
+        // Muestra las zonas con sus subestaciones.
         private void ActionListZones()
         {
             ElectricalZone[] zones = _service.GetZones();
@@ -529,6 +547,7 @@ namespace ElectricGrid.Tui
             ShowText("Zonas eléctricas", lines.ToArray());
         }
 
+        // Muestra el reporte y permite exportarlo.
         private void ActionReport()
         {
             string report = GridReportBuilder.Build(_service);
@@ -556,6 +575,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Muestra una de las estructuras internas.
         private void ActionInspect()
         {
             int choice = Pick("Ver estructura", new[] { "Tabla hash", "Grafo (listas de adyacencia)", "Trie", "Union-Find" });
@@ -573,6 +593,7 @@ namespace ElectricGrid.Tui
             ShowText(titles[choice], text.Replace("\r", string.Empty).Split('\n'));
         }
 
+        // Cambia entre caracteres Unicode y ASCII.
         private void ActionToggleGlyphs()
         {
             _glyphs = _glyphs.IsUnicode ? Glyphs.Ascii : Glyphs.Unicode;
@@ -580,6 +601,7 @@ namespace ElectricGrid.Tui
             SetStatus(_glyphs.IsUnicode ? "Dibujo con caracteres Unicode." : "Dibujo con ASCII simple.", ConsoleColor.Gray);
         }
 
+        // Muestra la ayuda de teclas y del dibujo.
         private void ActionHelp()
         {
             ShowText("Ayuda", new[]
@@ -614,6 +636,7 @@ namespace ElectricGrid.Tui
             });
         }
 
+        // Confirma y cierra la aplicación.
         private void ActionQuit()
         {
             if (Confirm("¿Salir de la aplicación?", true))
@@ -622,6 +645,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Muestra el detalle del nodo seleccionado.
         private void ShowSelectedNodeDetails()
         {
             if (_snapshot.Nodes.Length > 0)
@@ -630,6 +654,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Muestra los datos y las líneas de una subestación.
         private void ShowNodeDetails(Substation node)
         {
             int index = _snapshot.IndexOf(node.Code);
@@ -662,10 +687,13 @@ namespace ElectricGrid.Tui
             ShowMessage("Detalle de la subestación", lines.ToArray(), ConsoleColor.Cyan);
         }
 
+        // Crea un campo que empieza con la subestación seleccionada.
         private FormField SubstationField(string label) => SubstationField(label, _selectedCode ?? string.Empty);
 
+        // Crea un campo de subestación con un valor inicial.
         private static FormField SubstationField(string label, string value) => new FormField(label, value, FieldKind.Substation);
 
+        // Muestra el resultado de una operación.
         private void ReportResult(OperationResult result)
         {
             SetStatus(result.Message, result.Success ? ConsoleColor.Green : ConsoleColor.Red);
@@ -675,8 +703,10 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Interpreta la respuesta como sí, salvo que empiece con n.
         private static bool IsAffirmative(string text) => !(text.Length > 0 && (text[0] == 'n' || text[0] == 'N'));
 
+        // Convierte el texto en número y acepta coma decimal.
         private static bool TryNumber(string text, out double value)
             => double.TryParse(text.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out value);
     }

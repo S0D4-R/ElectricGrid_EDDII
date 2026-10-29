@@ -17,6 +17,7 @@ namespace ElectricGrid.Tui
 
         private sealed class FormField
         {
+            // Guarda la etiqueta, el valor y el tipo de campo.
             public FormField(string label, string value, FieldKind kind, string help = "")
             {
                 Label = label;
@@ -34,7 +35,7 @@ namespace ElectricGrid.Tui
             public string Help { get; }
         }
 
-        /// <summary>Muestra un cuadro de mensaje y espera cualquier tecla.</summary>
+        // Muestra un mensaje y espera una tecla.
         private void ShowMessage(string title, string[] lines, ConsoleColor accent)
         {
             int width = Math.Min(_width - 4, Math.Max(36, MaxLength(lines) + 4));
@@ -61,7 +62,7 @@ namespace ElectricGrid.Tui
             }
         }
 
-        /// <summary>Muestra una ventana de texto de solo lectura con desplazamiento.</summary>
+        // Muestra texto con desplazamiento vertical.
         private void ShowText(string title, string[] lines)
         {
             int top = 0;
@@ -109,7 +110,7 @@ namespace ElectricGrid.Tui
             }
         }
 
-        /// <summary>Hace una pregunta de sí o no; Enter elige la opción por defecto.</summary>
+        // Pregunta sí o no y devuelve la respuesta.
         private bool Confirm(string question, bool defaultYes)
         {
             string[] lines = Wrap(question, 50);
@@ -151,7 +152,7 @@ namespace ElectricGrid.Tui
             }
         }
 
-        /// <summary>Permite elegir una opción de una lista; devuelve su índice, o -1 si se cancela.</summary>
+        // Deja elegir una opción de una lista.
         private int Pick(string title, string[] options)
         {
             int selected = 0;
@@ -192,10 +193,7 @@ namespace ElectricGrid.Tui
             }
         }
 
-        /// <summary>
-        /// Muestra un formulario de varios campos y devuelve los valores, o nulo si se cancela.
-        /// Escribir sobre un valor precargado lo reemplaza; los campos de subestación muestran una vista previa.
-        /// </summary>
+        // Muestra los campos y devuelve los valores, o null si se cancela.
         private string[]? ShowForm(string title, FormField[] fields)
         {
             int active = 0;
@@ -276,12 +274,11 @@ namespace ElectricGrid.Tui
                             Substation[] candidates = _service.SuggestSubstations(fields[active].Value, 1);
                             if (candidates.Length > 0)
                             {
-                                fields[active].Value = candidates[0].Name; 
-                                break; // Detiene el salto para que el usuario vea cómo se autocompletó
+                                fields[active].Value = candidates[0].Name;
+                                break;
                             }
                         }
-                        
-                        // Comportamiento original del Tab (salto de campo)
+
                         active = shift ? (active + fields.Length - 1) % fields.Length : (active + 1) % fields.Length;
                         break;
                     case ConsoleKey.DownArrow:
@@ -324,9 +321,10 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Muestra la ayuda o la vista previa del campo activo.
         private void DrawFieldHint(FormField field, int x, int y, int width)
         {
-            
+
             if (field.Kind == FieldKind.Substation)
             {
                 string text = field.Value.Trim();
@@ -345,7 +343,6 @@ namespace ElectricGrid.Tui
                 }
                 else if (_service.SupportsAutocomplete)
                 {
-                    // NUEVO: Mostrar sugerencia si no hay coincidencia exacta
                     Substation[] candidates = _service.SuggestSubstations(text, 1);
                     if (candidates.Length > 0)
                     {
@@ -359,6 +356,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Recoge los valores del formulario sin espacios externos.
         private static string[] CollectValues(FormField[] fields)
         {
             string[] values = new string[fields.Length];
@@ -370,7 +368,7 @@ namespace ElectricGrid.Tui
             return values;
         }
 
-        /// <summary>Convierte el texto escrito (código o, si hay autocompletado, nombre) en un código de subestación; nulo si no hay coincidencia única.</summary>
+        // Convierte el texto en un código de subestación.
         private string? ResolveCode(string text)
         {
             Substation? byCode = _service.FindSubstation(text);
@@ -396,6 +394,7 @@ namespace ElectricGrid.Tui
             return candidates.Length == 1 ? candidates[0].Code : null;
         }
 
+        // Devuelve la longitud de la línea más larga.
         private static int MaxLength(string[] lines)
         {
             int max = 0;
@@ -407,7 +406,7 @@ namespace ElectricGrid.Tui
             return max;
         }
 
-        /// <summary>Divide un texto en líneas que no superan el ancho indicado, cortando por palabras.</summary>
+        // Corta el texto en líneas que quepan en el ancho indicado.
         private static string[] Wrap(string text, int width)
         {
             ArrayBuffer<string> lines = new ArrayBuffer<string>();

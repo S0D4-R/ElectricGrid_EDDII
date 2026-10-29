@@ -2,22 +2,20 @@ using System;
 
 namespace ElectricGrid.Collections
 {
-    /// <summary>Arreglo dinámico propio que reemplaza a List&lt;T&gt; como contenedor auxiliar de resultados.</summary>
+    // Arreglo dinámico sencillo que se usa en lugar de List<T>.
     public sealed class ArrayBuffer<T>
     {
         private T[] _items;
         private int _count;
 
-        /// <summary>Crea un contenedor vacío con la capacidad inicial indicada.</summary>
+        // Crea el arreglo interno con la capacidad indicada.
         public ArrayBuffer(int initialCapacity = 8)
         {
             _items = new T[initialCapacity < 1 ? 1 : initialCapacity];
         }
 
-        /// <summary>Cantidad de elementos almacenados.</summary>
         public int Count => _count;
 
-        /// <summary>Obtiene o reemplaza el elemento de la posición indicada.</summary>
         public T this[int index]
         {
             get
@@ -32,7 +30,7 @@ namespace ElectricGrid.Collections
             }
         }
 
-        /// <summary>Agrega un elemento al final, ampliando la capacidad cuando es necesario.</summary>
+        // Agrega al final y duplica la capacidad si ya no hay espacio.
         public void Add(T item)
         {
             if (_count == _items.Length)
@@ -43,7 +41,7 @@ namespace ElectricGrid.Collections
             _items[_count++] = item;
         }
 
-        /// <summary>Devuelve una copia del contenido con el tamaño exacto.</summary>
+        // Copia los elementos a un arreglo del tamaño exacto.
         public T[] ToArray()
         {
             T[] copy = new T[_count];
@@ -55,13 +53,14 @@ namespace ElectricGrid.Collections
             return copy;
         }
 
-        /// <summary>Elimina todos los elementos.</summary>
+        // Descarta los elementos y conserva la capacidad actual.
         public void Clear()
         {
             ArrayUtils.Clear(_items);
             _count = 0;
         }
 
+        // Verifica que el índice apunte a un elemento existente.
         private void EnsureValidIndex(int index)
         {
             if (index < 0 || index >= _count)

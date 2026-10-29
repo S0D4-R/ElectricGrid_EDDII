@@ -5,11 +5,7 @@ using ElectricGrid.Collections;
 
 namespace ElectricGrid.DataStructures
 {
-    /// <summary>
-    /// Bosque de conjuntos disjuntos (Union-Find) con compresión de camino y unión por rango.
-    /// Representa las zonas eléctricas y valida conectividad no dirigida entre subestaciones.
-    /// </summary>
-    /// <remarks>Responsable: Integrante C (Union-Find).</remarks>
+    // Union-Find con compresión de camino y unión por rango.
     public sealed class DisjointSet
     {
         private int[] _parent;
@@ -17,7 +13,7 @@ namespace ElectricGrid.DataStructures
         private int _elementCount;
         private int _setCount;
 
-        /// <summary>Crea una estructura vacía con la capacidad inicial indicada.</summary>
+        // Reserva los arreglos de padres y rangos.
         public DisjointSet(int initialCapacity = 16)
         {
             int capacity = initialCapacity < 1 ? 1 : initialCapacity;
@@ -25,13 +21,11 @@ namespace ElectricGrid.DataStructures
             _rank = new int[capacity];
         }
 
-        /// <summary>Cantidad de elementos creados.</summary>
         public int ElementCount => _elementCount;
 
-        /// <summary>Cantidad de conjuntos disjuntos, incluyendo los unitarios.</summary>
         public int SetCount => _setCount;
 
-        /// <summary>Crea un conjunto unitario nuevo y devuelve el índice de su elemento.</summary>
+        // Crea un conjunto unitario y devuelve su índice.
         public int MakeSet()
         {
             if (_elementCount == _parent.Length)
@@ -47,7 +41,7 @@ namespace ElectricGrid.DataStructures
             return element;
         }
 
-        /// <summary>Devuelve el representante del conjunto del elemento, aplicando compresión de camino.</summary>
+        // Devuelve la raíz del conjunto y comprime el camino.
         public int Find(int element)
         {
             ValidateElement(element);
@@ -68,7 +62,7 @@ namespace ElectricGrid.DataStructures
             return root;
         }
 
-        /// <summary>Une los conjuntos de ambos elementos por rango; devuelve falso si ya estaban unidos.</summary>
+        // Une dos conjuntos y devuelve false si ya estaban unidos.
         public bool Union(int a, int b)
         {
             int rootA = Find(a);
@@ -97,10 +91,10 @@ namespace ElectricGrid.DataStructures
             return true;
         }
 
-        /// <summary>Indica si dos elementos pertenecen al mismo conjunto.</summary>
+        // Indica si dos elementos tienen la misma raíz.
         public bool AreConnected(int a, int b) => Find(a) == Find(b);
 
-        /// <summary>Deja cada elemento existente en su propio conjunto, para reconstruir tras una eliminación.</summary>
+        // Deja cada elemento en su propio conjunto.
         public void ResetToSingletons()
         {
             for (int i = 0; i < _elementCount; i++)
@@ -112,20 +106,21 @@ namespace ElectricGrid.DataStructures
             _setCount = _elementCount;
         }
 
-        /// <summary>Devuelve el padre directo de un elemento sin comprimir; solo para diagnóstico.</summary>
+        // Devuelve el padre actual sin comprimir el camino.
         public int PeekParent(int element)
         {
             ValidateElement(element);
             return _parent[element];
         }
 
-        /// <summary>Devuelve el rango almacenado de un elemento; solo para diagnóstico.</summary>
+        // Devuelve el rango guardado para el elemento.
         public int PeekRank(int element)
         {
             ValidateElement(element);
             return _rank[element];
         }
 
+        // Comprueba que el índice exista.
         private void ValidateElement(int element)
         {
             if (element < 0 || element >= _elementCount)

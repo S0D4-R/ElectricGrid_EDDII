@@ -5,14 +5,12 @@ using ElectricGrid.Services;
 
 namespace ElectricGrid.Tui
 {
-    /// <summary>
-    /// Copia de la red en arreglos, lista para dibujar: nodos, aristas como índices de nodo y zona de cada nodo.
-    /// La búsqueda de código a índice usa la tabla hash propia del proyecto.
-    /// </summary>
+    // Copia de la red en arreglos para dibujarla.
     internal sealed class GraphSnapshot
     {
         private readonly HashTable<int> _indexByCode;
 
+        // Guarda los nodos, aristas y zonas de la copia.
         private GraphSnapshot(Substation[] nodes, HashTable<int> indexByCode, int[] from, int[] to,
                               bool[] twoWay, int[] zoneOfNode, int zoneCount)
         {
@@ -37,7 +35,7 @@ namespace ElectricGrid.Tui
 
         public int ZoneCount { get; }
 
-        /// <summary>Construye la copia a partir del servicio de la red.</summary>
+        // Lee el servicio y arma los arreglos que usa el dibujo.
         public static GraphSnapshot Build(IPowerGridService service)
         {
             Substation[] nodes = service.GetAllSubstations();
@@ -84,7 +82,7 @@ namespace ElectricGrid.Tui
             return new GraphSnapshot(nodes, index, from, to, twoWay, zoneOfNode, zones.Length);
         }
 
-        /// <summary>Devuelve el índice de un código de subestación, o -1 si no existe.</summary>
+        // Devuelve el índice de un código, o -1 si no está.
         public int IndexOf(string? code)
         {
             if (string.IsNullOrEmpty(code))
@@ -95,7 +93,7 @@ namespace ElectricGrid.Tui
             return _indexByCode.TryGetValue(code, out int index) ? index : -1;
         }
 
-        /// <summary>Cuenta las líneas que tocan al nodo.</summary>
+        // Cuenta las líneas que tocan al nodo.
         public int LineCount(int node)
         {
             int total = 0;

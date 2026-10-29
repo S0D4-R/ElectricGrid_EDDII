@@ -1,18 +1,18 @@
 namespace ElectricGrid.Services
 {
-    /// <summary>Vista de solo lectura de las estructuras de datos internas, para demostraciones y depuración.</summary>
+    // Consultas de solo lectura para mostrar las estructuras internas.
     public interface IStructureInspector
     {
-        /// <summary>Describe las cubetas y cadenas de colisión de la tabla hash.</summary>
+        // Describe las cubetas y colisiones de la tabla hash.
         string DescribeHashTable();
 
-        /// <summary>Describe las listas de adyacencia del grafo.</summary>
+        // Describe las listas de adyacencia del grafo.
         string DescribeGraph();
 
-        /// <summary>Describe el contenido y tamaño del Trie.</summary>
+        // Describe el contenido y tamaño del Trie.
         string DescribeTrie();
 
-        /// <summary>Describe el bosque de padres y rangos de Union-Find.</summary>
+        // Describe el padre y el rango de cada elemento de Union-Find.
         string DescribeDisjointSets();
     }
 }

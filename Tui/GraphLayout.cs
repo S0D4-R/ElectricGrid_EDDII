@@ -3,16 +3,12 @@ using ElectricGrid.Collections;
 
 namespace ElectricGrid.Tui
 {
-    /// <summary>
-    /// Calcula la posición de los nodos en celdas de terminal con un algoritmo de fuerzas (Fruchterman-Reingold):
-    /// los nodos se repelen, los conectados se atraen y una gravedad débil mantiene las zonas dentro del marco.
-    /// Luego se ajusta al tamaño del lienzo y se separan las etiquetas que se solapan.
-    /// </summary>
+    // Calcula las posiciones de los nodos con un algoritmo de fuerzas.
     internal static class GraphLayout
     {
         private const int Iterations = 300;
 
-        /// <summary>Calcula la columna y la fila de cada etiqueta, relativas al lienzo.</summary>
+        // Reparte los nodos y ajusta las posiciones al tamaño del lienzo.
         public static void Compute(GraphSnapshot graph, int width, int height, int labelWidth, out int[] x, out int[] y)
         {
             int n = graph.Nodes.Length;
@@ -96,6 +92,7 @@ namespace ElectricGrid.Tui
             SeparateLabels(x, y, labelWidth, usableW, usableH);
         }
 
+        // Coloca los nodos en un círculo para empezar la simulación.
         private static void SeedPositions(double[] px, double[] py, double areaW, double areaH)
         {
             int n = px.Length;
@@ -108,6 +105,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Escala las posiciones al ancho y alto disponibles.
         private static void StretchToCanvas(double[] px, double[] py, int usableW, int usableH, int[] x, int[] y)
         {
             double minX = px[0], maxX = px[0], minY = py[0], maxY = py[0];
@@ -129,6 +127,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Empuja las etiquetas que comparten fila para que no se solapen.
         private static void SeparateLabels(int[] x, int[] y, int labelWidth, int usableW, int usableH)
         {
             int n = x.Length;
@@ -169,6 +168,7 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Limita un valor al rango indicado.
         private static double Clamp(double value, double min, double max) => value < min ? min : (value > max ? max : value);
     }
 }

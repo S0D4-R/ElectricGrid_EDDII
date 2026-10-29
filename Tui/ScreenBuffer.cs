@@ -3,10 +3,7 @@ using System.Text;
 
 namespace ElectricGrid.Tui
 {
-    /// <summary>
-    /// Cuadrícula de caracteres con colores que se dibuja fuera de pantalla. Al volcarla solo se escriben
-    /// en la terminal las celdas que cambiaron desde el cuadro anterior, lo que evita parpadeo.
-    /// </summary>
+    // Búfer de pantalla que redibuja solo lo que cambió.
     internal sealed class ScreenBuffer
     {
         private readonly char[] _chars;
@@ -16,6 +13,7 @@ namespace ElectricGrid.Tui
         private readonly ConsoleColor[] _shownFore;
         private readonly ConsoleColor[] _shownBack;
 
+        // Crea los arreglos del tamaño indicado y limpia la pantalla.
         public ScreenBuffer(int width, int height)
         {
             Width = Math.Max(1, width);
@@ -38,16 +36,16 @@ namespace ElectricGrid.Tui
 
         public static ConsoleColor DefaultBack => ConsoleColor.Black;
 
-        /// <summary>Rellena todo el búfer con espacios.</summary>
+        // Llena todo el búfer con espacios.
         public void Clear()
         {
             Fill(0, 0, Width, Height, ' ', DefaultFore, DefaultBack);
         }
 
-        /// <summary>Devuelve el carácter de una celda, o un espacio si está fuera de rango.</summary>
+        // Devuelve el carácter de una celda o un espacio fuera de rango.
         public char CharAt(int x, int y) => InBounds(x, y) ? _chars[y * Width + x] : ' ';
 
-        /// <summary>Escribe un carácter con colores en una celda.</summary>
+        // Escribe un carácter con sus colores en una celda.
         public void Put(int x, int y, char c, ConsoleColor fore, ConsoleColor back)
         {
             if (!InBounds(x, y))
@@ -61,7 +59,7 @@ namespace ElectricGrid.Tui
             _back[i] = back;
         }
 
-        /// <summary>Escribe un texto horizontal, recortado al ancho máximo indicado.</summary>
+        // Escribe un texto horizontal con un ancho máximo.
         public void Text(int x, int y, string text, ConsoleColor fore, ConsoleColor back, int maxWidth = int.MaxValue)
         {
             int length = Math.Min(text.Length, maxWidth);
@@ -71,7 +69,7 @@ namespace ElectricGrid.Tui
             }
         }
 
-        /// <summary>Rellena un rectángulo con un carácter y colores.</summary>
+        // Rellena un rectángulo con un carácter.
         public void Fill(int x, int y, int w, int h, char c, ConsoleColor fore, ConsoleColor back)
         {
             for (int row = y; row < y + h; row++)
@@ -83,7 +81,7 @@ namespace ElectricGrid.Tui
             }
         }
 
-        /// <summary>Dibuja un recuadro de línea simple con título opcional y limpia su interior.</summary>
+        // Dibuja un recuadro y escribe su título.
         public void Box(int x, int y, int w, int h, string title, Glyphs g, ConsoleColor border, ConsoleColor fill)
         {
             if (w < 2 || h < 2)
@@ -116,7 +114,7 @@ namespace ElectricGrid.Tui
             }
         }
 
-        /// <summary>Envía a la terminal únicamente las celdas que difieren de lo que ya se muestra.</summary>
+        // Manda a la terminal solo las celdas que cambiaron.
         public void Flush()
         {
             StringBuilder run = new StringBuilder();
@@ -157,14 +155,17 @@ namespace ElectricGrid.Tui
             }
         }
 
+        // Indica si la celda difiere de lo que ya se mostró.
         private bool IsDirty(int x, int y)
         {
             int i = y * Width + x;
             return _chars[i] != _shownChars[i] || _fore[i] != _shownFore[i] || _back[i] != _shownBack[i];
         }
 
+        // Detecta la última celda del búfer.
         private bool IsLastCell(int x, int y) => x == Width - 1 && y == Height - 1;
 
+        // Comprueba que la coordenada esté dentro del búfer.
         private bool InBounds(int x, int y) => x >= 0 && y >= 0 && x < Width && y < Height;
     }
 }

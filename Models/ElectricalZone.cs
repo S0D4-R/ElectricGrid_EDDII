@@ -1,8 +1,8 @@
 namespace ElectricGrid.Models
 {
-    /// <summary>Conjunto conectado de subestaciones; corresponde a un componente de Union-Find.</summary>
     public sealed class ElectricalZone
     {
+        // Crea la zona y suma la capacidad de sus miembros.
         internal ElectricalZone(int id, Substation[] members)
         {
             Id = id;
@@ -17,13 +17,10 @@ namespace ElectricGrid.Models
             TotalCapacityMw = total;
         }
 
-        /// <summary>Número de zona, iniciando en 1.</summary>
         public int Id { get; }
 
-        /// <summary>Subestaciones de la zona.</summary>
         public Substation[] Members { get; }
 
-        /// <summary>Suma de las capacidades de los miembros en MW.</summary>
         public double TotalCapacityMw { get; }
     }
 }
